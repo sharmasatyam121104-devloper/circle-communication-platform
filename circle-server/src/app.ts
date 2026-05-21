@@ -9,10 +9,11 @@ import corsOptions from "./config/cors.config";
 app.use(express.json());
 app.use(urlencoded({extended: false}));
 app.use(cors(corsOptions))
-
+app.use(cookieParser())
 
 
 import UserRouter from "./modules/user/user.routes";
+import cookieParser from "cookie-parser";
 app.use('/user', UserRouter)
 
 
