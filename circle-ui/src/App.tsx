@@ -1,15 +1,17 @@
-import { Home } from "lucide-react"
-import Input from "./Components/ui/Input"
+import { Route, Routes } from "react-router-dom"
+import Home from "./pages/home"
+import Login from "./pages/login"
+import Signup from "./pages/signup"
+
 
 const App = () => {
   return (
-    <div className="m-20  ">
-      <Input type="password"
-        icon=<Home/>
-        label="home"
-        
-
-      />
+    <div>
+      <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+    </Routes>
     </div>
   )
 }

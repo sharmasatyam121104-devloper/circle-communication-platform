@@ -9,6 +9,7 @@ type InputProps = {
     type?: string;
     placeholder?: string;
     value?: string;
+    name?: string
     onChange?: (
         e: ChangeEvent<HTMLInputElement>
     ) => void;
@@ -35,6 +36,7 @@ const Input = ({
     type = "text",
     placeholder = "placeholder",
     value,
+    name,
     onChange,
     disabled = false,
     error,
@@ -87,6 +89,7 @@ const Input = ({
                 onChange={onChange}
                 disabled={disabled}
                 required={required}
+                name={name}
                 className={`
                     w-full
                     h-full
