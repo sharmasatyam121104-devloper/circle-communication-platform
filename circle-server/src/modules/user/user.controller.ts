@@ -1,9 +1,14 @@
 import { Request, Response } from "express";
-import { catchError, tryError } from "../../utils/serverErrorHandler";
-import UserModel from "./user.model";
+
 import bcrypt from "bcrypt"
-import { generateAccessToken } from "../../utils/jwt";
 import crypto from "crypto"
+import fs from 'fs'
+import path from "path";
+import sharp from "sharp";
+
+import UserModel from "./user.model";
+import { catchError, tryError } from "../../utils/serverErrorHandler";
+import { generateAccessToken } from "../../utils/jwt";
 import { SessionInterface } from "./user.interface";
 
 export const signup = async(req: Request, res: Response)=>{
@@ -26,7 +31,7 @@ export const signup = async(req: Request, res: Response)=>{
 
         const user = await UserModel.create(userPayload)
 
-        return res.status(201).json({message: "User registerd sucessfully."})
+        return res.status(201).json({message: "User registered successfully."})
     } 
     catch (error) {
         return catchError(error, res, "Error in singnup, Please try after sometime.");
@@ -54,7 +59,6 @@ export const login = async(req: Request, res: Response)=>{
 
         const access_token =  generateAccessToken(isUserExists._id)
         const refresh_token =  crypto.randomBytes(64).toString("hex")
-        const hashRefreshToken = await bcrypt.hash(refresh_token, 10)
         const last_login = Date.now()
 
         res.cookie("access_token", access_token, {
@@ -71,9 +75,9 @@ export const login = async(req: Request, res: Response)=>{
             maxAge: Number(process.env.REFRESH_TOKEN_EXPIRES)
         })
 
-        const user = await UserModel.findOneAndUpdate({_id: isUserExists._id}, {last_login, refresh_token: hashRefreshToken},{new: true}) 
+        await UserModel.findOneAndUpdate({_id: isUserExists._id}, {last_login, refresh_token},{ returnDocument: "after"}) 
 
-        return res.status(200).json({message: "User login sucessfully", data: user})
+        return res.status(200).json({message: "User login sucessfully"})
 
     } 
     catch (error) {
@@ -91,7 +95,7 @@ export const logout = async(req: SessionInterface, res: Response)=>{
             throw tryError("Id not found.", 404)
         }
 
-        const user = await UserModel.findByIdAndUpdate({_id: id}, {refresh_token: ""}, {new: true})
+        await UserModel.findByIdAndUpdate(id, {refresh_token: ""}, { returnDocument: "after" })
 
         res.clearCookie("access_token");
         res.clearCookie("refresh_token");
@@ -107,12 +111,101 @@ export const logout = async(req: SessionInterface, res: Response)=>{
 }
 
 
-export const profile_picture = async(req: Request, res: Response)=>{
+export const profile_picture = async(req: SessionInterface, res: Response)=>{
     try {
-        
+        const id = req.id?.toString()
+
+        if(!id){
+            throw tryError("Id not found.", 404)
+        }
+
+        if (!req.file) {
+            throw tryError("Image is required", 400)
+        }
+
+        //idhar pe queue system lagega
+        const uploadDir  = "src/uploads/profile-picture";
+
+        if (!fs.existsSync(uploadDir)) {
+
+            fs.mkdirSync(
+                uploadDir,
+                {
+                    recursive: true,
+                }
+            );
+        }
+
+        const fileName = `${id}.webp`;
+
+        const outputPath = path.join(uploadDir, fileName );
+
+        await sharp(req.file.path)
+
+        .resize(300, 300)
+
+        .webp({ quality: 70,})
+
+        .toFile(outputPath);
+
+        const profile_picture =`/profile-picture/${fileName}`;
+
+        if (fs.existsSync(req.file.path)) {
+            fs.unlinkSync(req.file.path);
+        }
+
+        await UserModel.findByIdAndUpdate(id, { profile_picture_url: profile_picture })
+
+        return res.status(200).json({message: "Profile image updated successfully."})
+
     } 
     catch (error) {
         return catchError(error, res, "Error in profile_picture, Please try after sometime.")
+    }
+}
+
+export const refreshToken = async(req: Request, res: Response)=>{
+    try {
+        const refresh_token = req.cookies?.refresh_token
+        if(!refresh_token){
+            throw tryError("Refresh token expired.", 400)
+        }
+
+        const user = await UserModel.findOne({refresh_token})
+
+        if(!user){
+            throw tryError("Unauthorized Access", 401)
+        }
+
+        const access_token =  generateAccessToken(user._id)
+
+        res.cookie("access_token", access_token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "dev" || "development" ? false : true,
+            sameSite: "lax",
+            maxAge: Number(process.env.ACCESS_TOKEN_EXPIRES)
+        })
+
+        return res.status(200).json({message: "Access token generated successfully."})
+
+    } 
+    catch (error) {
+        return catchError(error, res, "Error in refreshToken, Please try some time later.")    
+    }
+}
+
+export const getMe = async(req: SessionInterface, res: Response)=>{
+    try {
+        const id = req.id?.toString()
+        if(!id){
+            throw tryError("Id not found.", 404)
+        }
+        const user = await UserModel.findById(id)
+
+        return res.status(200).json({data: user})
+    } 
+    catch (error) {
+        return catchError(error, res, "Error in refreshToken, Please try some time later.")    
     }
 }
 
