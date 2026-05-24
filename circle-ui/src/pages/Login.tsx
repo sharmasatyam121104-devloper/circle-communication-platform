@@ -44,10 +44,8 @@ const Login = () => {
       window.location.href = `${import.meta.env.VITE_SERVER}/user/google`;
     } 
     catch (error) {
-      return clientCatchError(error)
-    }
-    finally{
       setGoogleLoading(false)
+      return clientCatchError(error)
     }
   };
 
