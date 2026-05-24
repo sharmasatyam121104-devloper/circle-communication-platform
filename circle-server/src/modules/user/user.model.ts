@@ -11,13 +11,13 @@ const userSchema = new Schema<UserInterface>({
     },
     email: {
         type: String,
+        required: true,
         trim: true,
         unique: true,
         match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
     },
     password: {
         type: String,
-        required: true,
         select: false
     },
     refresh_token: {

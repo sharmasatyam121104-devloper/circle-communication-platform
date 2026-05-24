@@ -16,9 +16,11 @@ type LoginProps = {
   setFormData: Dispatch<SetStateAction<FormDataType>>;
   loading: boolean;
   handleLogin: (e: SyntheticEvent<HTMLFormElement>) => void;
+  handleGoogleLogin:() => void;
+  googleLoading: boolean
 };
 
-const LoginComponents = ({ formData, setFormData, loading, handleLogin }: LoginProps) => {
+const LoginComponents = ({ formData, setFormData, loading, handleLogin, handleGoogleLogin, googleLoading }: LoginProps) => {
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>)=>{
     const {name, value} = e.target;
@@ -61,7 +63,7 @@ const LoginComponents = ({ formData, setFormData, loading, handleLogin }: LoginP
               </form>
           </div>
           <div className="px-6">
-            <Button  className="mt-6 active:scale-50" width="w-full" bgColor="bg-rose-500">
+            <Button onClick={handleGoogleLogin} loading={googleLoading} disabled={googleLoading} className="mt-6 active:scale-50" width="w-full" bgColor="bg-rose-500">
               <FcGoogle size={20} />
 
               <span className="text-[#ebdedd] font-medium ml-4">

@@ -13,6 +13,7 @@ const Login = () => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const navigate = useNavigate();
 
   const getMe = useAuthStore(
@@ -37,13 +38,27 @@ const Login = () => {
     }
   }
 
+  const handleGoogleLogin = () => {
+    try {
+      setGoogleLoading(true)
+      window.location.href = `${import.meta.env.VITE_SERVER}/user/google`;
+    } 
+    catch (error) {
+      return clientCatchError(error)
+    }
+    finally{
+      setGoogleLoading(false)
+    }
+  };
+
   return (
     <LoginComponents
       formData={formData}
       setFormData={setFormData}
       loading={loading}
-
       handleLogin={handleLogin}
+      handleGoogleLogin={handleGoogleLogin}
+      googleLoading={googleLoading}
     />
   );
 };
