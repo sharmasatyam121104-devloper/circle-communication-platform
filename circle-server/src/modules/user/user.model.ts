@@ -11,7 +11,6 @@ const userSchema = new Schema<UserInterface>({
     },
     email: {
         type: String,
-        required: true,
         trim: true,
         unique: true,
         match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
@@ -29,7 +28,12 @@ const userSchema = new Schema<UserInterface>({
     },
     last_login: {
         type: Date
-    }
+    },
+    provider: {
+        type: String,
+        enum: [ "google" , "local"],
+        default: "local"
+    },
 },
 {
     timestamps: true

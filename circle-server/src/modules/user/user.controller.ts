@@ -63,14 +63,14 @@ export const login = async(req: Request, res: Response)=>{
 
         res.cookie("access_token", access_token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "dev" || "development" ? false : true,
+            secure: process.env.NODE_ENV === "dev" || process.env.NODE_ENV === "development" ? false : true,
             sameSite: "lax",
             maxAge: Number(process.env.ACCESS_TOKEN_EXPIRES)
         })
 
         res.cookie("refresh_token", refresh_token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "dev" || "development" ? false : true,
+            secure: process.env.NODE_ENV === "dev" || process.env.NODE_ENV === "development" ? false : true,
             sameSite: "lax",
             maxAge: Number(process.env.REFRESH_TOKEN_EXPIRES)
         })
@@ -181,7 +181,7 @@ export const refreshToken = async(req: Request, res: Response)=>{
 
         res.cookie("access_token", access_token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "dev" || "development" ? false : true,
+            secure: process.env.NODE_ENV === "dev" || process.env.NODE_ENV === "development" ? false : true,
             sameSite: "lax",
             maxAge: Number(process.env.ACCESS_TOKEN_EXPIRES)
         })
@@ -208,5 +208,57 @@ export const getMe = async(req: SessionInterface, res: Response)=>{
         return catchError(error, res, "Error in refreshToken, Please try some time later.")    
     }
 }
+
+
+
+export const googleCallback = async (req: any, res: any) => {
+    try {
+        const googleUser = req.user;
+
+        // 1. check user in DB
+        let user = await UserModel.findOne({
+            email: googleUser.email,
+        });
+
+        // 2. if not exist → create user
+        if (!user) {
+            user = await UserModel.create({
+            fullname: googleUser.fullname,
+            email: googleUser.email,
+            profile_picture_url: googleUser.avatar,
+            provider: "google",
+            });
+        }
+
+        const access_token =  generateAccessToken(user._id)
+        const refresh_token =  crypto.randomBytes(64).toString("hex")
+
+        user.last_login = new Date();
+        user.refresh_token = refresh_token;
+        await user.save();
+
+
+        res.cookie("access_token", access_token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "dev" || process.env.NODE_ENV === "development" ? false : true,
+            sameSite: "lax",
+            maxAge: Number(process.env.ACCESS_TOKEN_EXPIRES)
+        })
+
+        res.cookie("refresh_token", refresh_token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "dev" || process.env.NODE_ENV === "development" ? false : true,
+            sameSite: "lax",
+            maxAge: Number(process.env.REFRESH_TOKEN_EXPIRES)
+        })
+
+        // 6. redirect frontend
+        return res.redirect(`${process.env.CLIENT_URL}/chat`);
+    } 
+    catch (error) {
+        catchError(error, res, "Error in Google login.")
+        return res.redirect(`${process.env.CLIENT_URL}/login`);
+    }
+};
 
 
