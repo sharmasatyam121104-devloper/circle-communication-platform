@@ -3,16 +3,24 @@ import Button from "../ui/Button"
 import Input from "../ui/Input"
 import Logo from "../ui/Logo"
 import { ArrowUpRight } from "lucide-react"
-import { useState, type ChangeEvent, type SyntheticEvent } from "react"
+import { type ChangeEvent, type Dispatch, type SetStateAction, type SyntheticEvent } from "react"
 import AuthLink from "../ui/AuthLinker"
 
-const SignupComponents = () => {
-  const [formData, setFormData] = useState({
-    fullname: "",
-    email: "",
-    password: ""
-  })
-  const [loading, setloading] = useState(false)
+type FormDataType = {
+  fullname: string,
+  email: string,
+  password: string,
+}
+
+type SignupProp = {
+  formData: FormDataType;
+  setFormData: Dispatch<SetStateAction<FormDataType>>;
+  loading: boolean;
+  handleSignup: (e: SyntheticEvent<HTMLFormElement>) => void;
+}
+
+const SignupComponents = ({formData, setFormData, loading, handleSignup}: SignupProp) => {
+
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>)=>{
     const {name, value} = e.target;
@@ -21,11 +29,6 @@ const SignupComponents = () => {
       [name]: value
     }))
   }
-
-const handleSignup = (e: SyntheticEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  console.log(formData);
-};
 
   return (
     <div className="min-h-screen lg:bg-slate-300 bg-indigo-500 flex justify-center items-center ">

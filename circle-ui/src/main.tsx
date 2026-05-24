@@ -7,7 +7,11 @@ import { BrowserRouter } from 'react-router-dom'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Toaster />
+    <Toaster
+      position="top-center"
+      richColors 
+      expand={false}
+    />
     <BrowserRouter>
       <App />
     </BrowserRouter>

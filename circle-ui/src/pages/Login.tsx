@@ -1,9 +1,45 @@
+import { useState, type SyntheticEvent } from "react"
 import LoginComponents from "../Components/page-components/LoginComponents"
+import { toast } from "sonner";
+import clientCatchError from "../lib/clientCatchError";
+import api from "../lib/api";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
+  const [formData, setFormData] = useState({
+    email: "",
+    password: ""
+  });
+
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogin = async(e: SyntheticEvent<HTMLFormElement>)=>{
+    e.preventDefault();
+    try {
+        setLoading(true)
+        console.log(formData);
+        await api.post("/user/login", formData)
+        toast.success("Login success.")
+        navigate('/')
+    } 
+    catch (error) {
+        return clientCatchError(error)
+    }
+    finally{
+        setLoading(false)
+    }
+  }
+
   return (
-    <LoginComponents/>
-  )
-}
+    <LoginComponents
+      formData={formData}
+      setFormData={setFormData}
+      loading={loading}
+
+      handleLogin={handleLogin}
+    />
+  );
+};
 
 export default Login

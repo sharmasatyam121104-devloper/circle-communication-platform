@@ -3,7 +3,7 @@ import type { ReactNode } from "react"
 type ButtonProps = {
     children: ReactNode,
     type?: "button" | "submit" | "reset";
-    onClick?: ()=>void;
+    onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
     disabled?: boolean;
     loading?: boolean;
     width?: string;

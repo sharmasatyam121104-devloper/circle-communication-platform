@@ -3,28 +3,30 @@ import Button from "../ui/Button"
 import Input from "../ui/Input"
 import Logo from "../ui/Logo"
 import { ArrowUpRight } from "lucide-react"
-import { useState, type ChangeEvent, type SyntheticEvent } from "react"
+import {  type ChangeEvent, type Dispatch, type SetStateAction, type SyntheticEvent} from "react"
 import AuthLink from "../ui/AuthLinker"
 
-const LoginComponents = () => {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: ""
-  })
-  const [loading, setloading] = useState(false)
+type FormDataType = {
+  email: string,
+  password: string
+}
+
+type LoginProps = {
+  formData: FormDataType;
+  setFormData: Dispatch<SetStateAction<FormDataType>>;
+  loading: boolean;
+  handleLogin: (e: SyntheticEvent<HTMLFormElement>) => void;
+};
+
+const LoginComponents = ({ formData, setFormData, loading, handleLogin }: LoginProps) => {
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>)=>{
     const {name, value} = e.target;
-    setFormData((prev)=>({
+    setFormData((prev: FormDataType)=>({
       ...prev,
       [name]: value
     }))
   }
-
-const handleLogin = (e: SyntheticEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  console.log(formData);
-};
 
   return (
     <div className="min-h-screen lg:bg-gray-300 backdrop-blur-md bg-indigo-500 flex justify-center items-center ">
@@ -51,7 +53,7 @@ const handleLogin = (e: SyntheticEvent<HTMLFormElement>) => {
                   name="password"
                   onChange={(e)=>handleChange(e)}
                 />
-                <Button width="w-full" type="submit" loading={loading}
+                <Button width="w-full" type={"submit"} loading={loading}
                   className="mt-4 font-bold active:scale-50 flex gap-2
                 ">
                   <ArrowUpRight />Login Now
@@ -59,7 +61,7 @@ const handleLogin = (e: SyntheticEvent<HTMLFormElement>) => {
               </form>
           </div>
           <div className="px-6">
-            <Button loading={loading} className="mt-6 active:scale-50" width="w-full" bgColor="bg-rose-500">
+            <Button  className="mt-6 active:scale-50" width="w-full" bgColor="bg-rose-500">
               <FcGoogle size={20} />
 
               <span className="text-[#ebdedd] font-medium ml-4">
