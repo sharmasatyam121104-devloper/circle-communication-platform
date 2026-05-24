@@ -20,7 +20,7 @@ const Signup = () => {
         setLoading(true)
         const {data} = await api.post("/user/signup", formData)
         toast.success(data.message)
-        navigate('/')
+        navigate('/login')
       } 
       catch (error) {
         clientCatchError(error)

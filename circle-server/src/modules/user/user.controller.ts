@@ -200,7 +200,7 @@ export const getMe = async(req: SessionInterface, res: Response)=>{
         if(!id){
             throw tryError("Id not found.", 404)
         }
-        const user = await UserModel.findById(id)
+        const user = await UserModel.findById(id).select("-refresh_token")
 
         return res.status(200).json({data: user})
     } 

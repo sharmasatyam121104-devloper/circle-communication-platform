@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import clientCatchError from "../lib/clientCatchError";
 import api from "../lib/api";
 import { useNavigate } from "react-router-dom";
+import useAuthStore from "../store/useAuthStore";
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -14,14 +15,19 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const getMe = useAuthStore(
+    (state) => state.getMe
+  );
+
   const handleLogin = async(e: SyntheticEvent<HTMLFormElement>)=>{
     e.preventDefault();
     try {
         setLoading(true)
         console.log(formData);
         await api.post("/user/login", formData)
+        getMe()
         toast.success("Login success.")
-        navigate('/')
+        navigate('/chat')
     } 
     catch (error) {
         return clientCatchError(error)
