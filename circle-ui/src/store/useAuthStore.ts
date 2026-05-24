@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import axios from "axios";
 
 import api from "../lib/api";
 
@@ -27,26 +26,9 @@ const useAuthStore = create<AuthStore>((set) => ({
         try {
             const { data } = await api.get<UserInterface>("/user/get-me");
             set({user: data,});
-
         } 
-        catch (error: unknown) {
-
-            if ( axios.isAxiosError(error) && error.response?.status === 401) {
-                try {
-                    await api.get("/user/refresh-token");
-                    const { data } = await api.get<UserInterface>("/user/get-me");
-                    set({user: data,});
-                } 
-                catch (refreshError: unknown) {
-
-                    if (axios.isAxiosError(refreshError) && (refreshError.response?.status === 401 || refreshError.response?.status === 404)) {
-                    set({user: null,});
-                    }
-                }
-            } 
-            else {
-                set({user: null,});
-            }
+        catch{
+            set({user: null,});
         } 
         finally {
             set({loading: false,});

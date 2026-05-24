@@ -9,24 +9,16 @@ const ProtectedRoute = () => {
 
     useEffect(() => {
 
-    const interval = setInterval(async () => {
-
-      try {
-
-        await api.get("/user/refresh-token");
-
-        console.log("Refresh token called");
-
-      } catch (error) {
-
-        console.log(error);
-      }
-
-    }, 14 * 60 * 1000);
-
-    return () => clearInterval(interval);
-
-  }, []);
+        const interval = setInterval(async () => {
+            try {
+                await api.get("/user/refresh-token");
+            } 
+            catch (error) {
+                console.log(error);
+            }
+        }, 14 * 60 * 1000);
+        return () => clearInterval(interval);
+    }, []);
 
   const { user, loading } = useAuthStore();
 
