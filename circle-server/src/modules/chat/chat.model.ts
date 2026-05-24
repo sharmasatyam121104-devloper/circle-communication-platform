@@ -9,8 +9,7 @@ const chatSchema = new Schema<ChatInterface>({
     }],
     lastMessage: {
         type: Types.ObjectId,
-        ref: "Message",
-        required: true
+        ref: "Message"
     }
 },
 {timestamps: true})
