@@ -8,6 +8,7 @@ import { IoCallOutline } from "react-icons/io5"
 import SenderMessage from "../Components/chats/SenderMessage"
 import ReceiverMessage from "../Components/chats/ReciverMessage"
 import { MdOutlineVideoCall } from "react-icons/md"
+import ChatMemberCard from "../Components/chats/ChatMemberCard"
 
 const Chat = () => {
 
@@ -18,13 +19,22 @@ const Chat = () => {
             <Avatar className="ml-7"/>
             <Logo className="ml-15"/>
         </div>
-        <div className="h-10/12 w-full bg-gray-600 my-2 rounded-2xl">
 
+        <div className="h-144 w-full bg-gray-600 my-2 rounded-2xl p-2 overflow-y-auto">
+          <ChatMemberCard
+            name="Satyam Sharma"
+            lastMessage="Bhai project complete ho gaya?"
+            avatar="https://i.pravatar.cc/150?img=8"
+            unreadCount={3}
+            isOnline={true}
+          />
         </div>
+
         <div className="  h-12 flex justify-between items-center rounded-2xl ">
           <Button className="ml-6 flex gap-4 hover:bg-red-400 active:scale-90" bgColor="bg-red-600"> <LogOutIcon/> LogOut</Button>
           <Button className="mr-6 flex gap-4 hover:bg-green-400 active:scale-90" bgColor="bg-green-600"><MessageCircleDashed/>New Chat</Button>
         </div>
+
       </div>
       <div className="w-9/12 bg-gray-600 rounded-2xl m-2">
         <div className="flex items-center justify-between gap-1 w-full bg-white rounded-t-2xl px-6 py-1">

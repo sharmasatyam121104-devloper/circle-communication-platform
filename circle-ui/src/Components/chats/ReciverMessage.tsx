@@ -29,7 +29,7 @@ const ReceiverMessage = ({
 
         {/* Message */}
         {message && (
-          <h1 className="text-[15px] leading-relaxed break-words">
+          <h1 className="text-[15px] leading-relaxed wrap-break-words">
             {message}
           </h1>
         )}
