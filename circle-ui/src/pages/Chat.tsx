@@ -1,4 +1,4 @@
-import { ArrowUpRight, LogOutIcon, MessageCircleDashed } from "lucide-react"
+import { ArrowBigLeft, ArrowUpRight, LogOutIcon, MessageCircleDashed } from "lucide-react"
 import Avatar from "../Components/ui/Avtar"
 import Button from "../Components/ui/Button"
 import Logo from "../Components/ui/Logo"
@@ -9,8 +9,10 @@ import SenderMessage from "../Components/chats/SenderMessage"
 import ReceiverMessage from "../Components/chats/ReciverMessage"
 import { MdOutlineVideoCall } from "react-icons/md"
 import ChatMemberCard from "../Components/chats/ChatMemberCard"
+import { Link, useNavigate } from "react-router-dom"
 
 const Chat = () => {
+  const navigate = useNavigate();
 
   return (
     <div className="h-screen  flex bg-indigo-300 p-2">
@@ -27,6 +29,7 @@ const Chat = () => {
             avatar="https://i.pravatar.cc/150?img=8"
             unreadCount={3}
             isOnline={true}
+            onClick={() => navigate("/chat/123")}
           />
         </div>
 
@@ -38,6 +41,7 @@ const Chat = () => {
       </div>
       <div className="w-9/12 bg-gray-600 rounded-2xl m-2">
         <div className="flex items-center justify-between gap-1 w-full bg-white rounded-t-2xl px-6 py-1">
+          <Link to={'/chat'} className="block lg:hidden"><ArrowBigLeft/></Link>
           <div className="flex gap-2">
             <Avatar/>
             <div>
