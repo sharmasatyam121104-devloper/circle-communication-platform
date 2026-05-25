@@ -10,22 +10,51 @@ import ReceiverMessage from "../Components/chats/ReciverMessage"
 import { MdOutlineVideoCall } from "react-icons/md"
 import ChatMemberCard from "../Components/chats/ChatMemberCard"
 import { Link, useNavigate, useParams } from "react-router-dom"
+import clientCatchError from "../lib/clientCatchError"
+import { useState } from "react"
+import { toast } from "sonner"
+import api from "../lib/api"
+import useAuthStore from "../store/useAuthStore"
 
 const Chat = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const isChatOpen = Boolean(id); 
 
+  const [logoutLoading, setLogoutLoading] = useState(false)
+  const setUser = useAuthStore.getState().setUser;
+
+  const handleLogout = async()=>{
+    try {
+      setLogoutLoading(true)
+      const {data} = await api.get('/user/logout')
+      setUser(null);
+      toast.info(data.message)
+      navigate('/login')
+    } 
+    catch (error) {
+      clientCatchError(error)  
+    }
+    finally{
+      setLogoutLoading(false)
+    }
+  }
+
 
   return (
     <div className="h-screen  flex bg-indigo-300 p-2">
-      <div className=" w-3/12 p-2">
+      <div
+          className={`
+            ${isChatOpen ? "hidden lg:block" : "block"}
+            w-full lg:w-3/12 p-2
+          `}
+        >
         <div className="flex  items-center  h-fit py-2  bg-white rounded-2xl">
             <Avatar className="ml-7"/>
             <Logo className="ml-15"/>
         </div>
 
-        <div className="h-144 w-full bg-gray-600 my-2 rounded-2xl p-2 overflow-y-auto">
+        <div className="lg:h-144 h-[82vh] w-full bg-gray-600 my-2 rounded-2xl p-2 overflow-y-auto">
           <ChatMemberCard
             name="Satyam Sharma"
             lastMessage="Bhai project complete ho gaya?"
@@ -37,16 +66,16 @@ const Chat = () => {
         </div>
 
         <div className="  h-12 flex justify-between items-center rounded-2xl ">
-          <Button className="ml-6 flex gap-4 hover:bg-red-400 active:scale-90" bgColor="bg-red-600"> <LogOutIcon/> LogOut</Button>
+          <Button onClick={handleLogout} className="ml-6 flex gap-4 hover:bg-red-400 active:scale-90" bgColor="bg-red-600" loading={logoutLoading} disabled={logoutLoading}> <LogOutIcon/> LogOut</Button>
           <Button className="mr-6 flex gap-4 hover:bg-green-400 active:scale-90" bgColor="bg-green-600"><MessageCircleDashed/>New Chat</Button>
         </div>
 
       </div>
-      <div className="w-9/12 bg-gray-600 rounded-2xl m-2">
+      <div className="lg:w-9/12 w-full bg-gray-600 rounded-2xl m-2">
         {
           isChatOpen === false 
           ?
-          <div className="h-full flex flex-col justify-center items-center text-white px-6 text-center">
+           <div className="hidden lg:flex h-full flex-col justify-center items-center text-white px-6 text-center">
             
             <div className="bg-indigo-500 p-5 rounded-full shadow-lg mb-6">
               <MessageCircleDashed size={50} />
@@ -67,7 +96,13 @@ const Chat = () => {
           </div>
           :
           <>
-            <div className="flex items-center justify-between gap-1 w-full bg-white rounded-t-2xl px-6 py-1">
+            <div
+              className={`
+                ${!isChatOpen ? "hidden lg:block" : "block"}
+                flex items-center justify-between gap-2
+                w-full bg-white rounded-t-2xl px-3 lg:px-6 py-2
+              `}
+            >
               <Link to={'/chat'} className="block lg:hidden"><ArrowBigLeft/></Link>
               <div className="flex gap-2">
                 <Avatar/>
@@ -83,7 +118,7 @@ const Chat = () => {
               </div>
             </div>
 
-            <div className="h-140 overflow-y-auto">
+            <div className="lg:h-140 h-[80vh] overflow-y-auto">
                 <SenderMessage
                   message="Bhai ye project report dekh"
                   time="9:12 PM"
@@ -101,16 +136,25 @@ const Chat = () => {
                   time="9:12 PM"
                   isSeen={true}
                 />
-                
             </div>
-            <div className="flex items-center h-16 mb-8">
-              <div className="bg-white ml-6 rounded-full p-2 active:scale-95 cursor-pointer">
-                <CgAttachment className="text-4xl text-indigo-600 "/>
+
+            <div className="flex items-center gap-2 px-2 lg:px-4 py-2">
+
+              <div className="bg-white rounded-full p-2 active:scale-95 cursor-pointer shrink-0">
+                <CgAttachment className="text-3xl lg:text-4xl text-indigo-600" />
               </div>
-              <Input height="h-17 mb-2 ml-6" placeholder="Write your message here..."/>
-              <div className="bg-indigo-600 ml-6 rounded-full p-4 active:scale-95 cursor-pointer h-fit w-fit flex items-center justify-center mr-8 hover:bg-green-600">
-                <ArrowUpRight  size={27} className=" text-white"/>
+
+              <div className="flex-1">
+                <Input
+                  height="h-12 lg:h-14"
+                  placeholder="Write your message here..."
+                />
               </div>
+
+              <div className="bg-indigo-600 rounded-full p-3 lg:p-4 active:scale-95 cursor-pointer shrink-0 hover:bg-green-600">
+                <ArrowUpRight size={22} className="text-white" />
+              </div>
+
             </div>
           </>
         }

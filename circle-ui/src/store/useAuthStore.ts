@@ -16,6 +16,7 @@ interface AuthStore {
     user: UserInterface | null;
     loading: boolean;
     getMe: () => Promise<void>;
+    setUser: (user: UserInterface | null) => void;
 }
 
 const useAuthStore = create<AuthStore>((set) => ({
@@ -34,6 +35,8 @@ const useAuthStore = create<AuthStore>((set) => ({
             set({loading: false,});
         }
     },
+
+    setUser: (user) => set({ user }), 
 }));
 
 export default useAuthStore;
