@@ -11,11 +11,13 @@ import { MdOutlineVideoCall } from "react-icons/md"
 import ChatMemberCard from "../Components/chats/ChatMemberCard"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import clientCatchError from "../lib/clientCatchError"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import api from "../lib/api"
 import useAuthStore from "../store/useAuthStore"
 import AddChatSidebarMembers from "../Components/chats/AddChatSidebarMembers"
+
+const server = import.meta.env.VITE_SERVER;
 
 const Chat = () => {
   const navigate = useNavigate();
@@ -26,6 +28,11 @@ const Chat = () => {
   const setUser = useAuthStore.getState().setUser;
 
   const [isAddMemberInChatModalOpen, setIsAddMemberInChatModalOpen] = useState(false)
+  const [allChats, setAllChats] = useState([])
+  const [allChatsLoading, setAllChatsLoading ] = useState(false)
+
+  const user = useAuthStore((state)=>state.user)
+
 
   const handleLogout = async()=>{
     try {
@@ -43,6 +50,24 @@ const Chat = () => {
     }
   }
 
+  useEffect(()=>{
+    const getAllChats = async()=>{
+      try {
+        setAllChatsLoading(true)
+        const {data} = await api.get('/chat')
+        console.log(data);
+      } 
+      catch (error) {
+        clientCatchError(error)
+      }
+      finally{
+        setAllChatsLoading(false)
+      }
+    }
+
+    getAllChats()
+  },[])
+
 
   return (
     <div className="h-screen  flex bg-indigo-300 p-2">
@@ -53,7 +78,12 @@ const Chat = () => {
           `}
         >
         <div className="flex  items-center  h-fit py-2  bg-white rounded-2xl">
-            <Avatar className="ml-7"/>
+          <Avatar
+            src={`${server}${user?.data?.profile_picture_url}`}
+            name={user?.data?.fullname}
+            size="w-14 h-14"
+            className="ml-7 border-2 border-red-500"
+          />
             <Logo className="ml-15"/>
         </div>
 

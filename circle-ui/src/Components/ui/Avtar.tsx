@@ -22,7 +22,6 @@ const Avatar = ({
       .charAt(0)
       .toUpperCase();
 
-
   return (
 
     <div
@@ -36,6 +35,7 @@ const Avatar = ({
         justify-center
         text-white
         font-semibold
+        shrink-0
         ${className}
       `}
     >
@@ -45,16 +45,16 @@ const Avatar = ({
         src ? (
 
           <img
-
             src={src}
-
             alt={name}
 
             className="
               w-full
               h-full
               object-cover
+              block
             "
+            referrerPolicy="no-referrer"
           />
 
         ) : (

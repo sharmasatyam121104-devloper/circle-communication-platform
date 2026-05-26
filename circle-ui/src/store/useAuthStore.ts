@@ -3,6 +3,7 @@ import { create } from "zustand";
 import api from "../lib/api";
 
 interface UserInterface {
+    data: {
     _id: string;
     fullname: string;
     email: string;
@@ -10,7 +11,10 @@ interface UserInterface {
     updatedAt: Date;
     last_login: Date;
     profile_picture_url: string;
+    }
 }
+
+
 
 interface AuthStore {
     user: UserInterface | null;
@@ -26,7 +30,7 @@ const useAuthStore = create<AuthStore>((set) => ({
         set({ loading: true,});
         try {
             const { data } = await api.get<UserInterface>("/user/get-me");
-            set({user: data,});
+            set({user: data});
         } 
         catch{
             set({user: null,});
