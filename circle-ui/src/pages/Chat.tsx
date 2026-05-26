@@ -5,8 +5,6 @@ import Logo from "../Components/ui/Logo"
 import { CgAttachment } from "react-icons/cg"
 import Input from "../Components/ui/Input"
 import { IoCallOutline } from "react-icons/io5"
-import SenderMessage from "../Components/chats/SenderMessage"
-import ReceiverMessage from "../Components/chats/ReciverMessage"
 import { MdOutlineVideoCall } from "react-icons/md"
 import ChatMemberCard from "../Components/chats/ChatMemberCard"
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
@@ -18,6 +16,7 @@ import useAuthStore from "../store/useAuthStore"
 import AddChatSidebarMembers from "../Components/chats/AddChatSidebarMembers"
 import Tooltip from "../Components/ui/Tooltip"
 import Loader from "../Components/ui/Loder"
+import MessageArea from "../Components/chats/MessageArea"
 
 interface LastMessageInterface {
   _id: string;
@@ -123,7 +122,7 @@ const Chat = () => {
       const payload = {
         message: message.trim()
       }
-      
+
       try {
         setSendMessageLoading(true)
         alert(payload.message)
@@ -147,17 +146,21 @@ const Chat = () => {
 
 
 
-  return (
-    <div className="h-screen  flex bg-indigo-300 p-2">
-      <div
-          className={`
-            ${isChatOpen ? "hidden lg:block" : "block"}
-            w-full lg:w-3/12 p-2
-          `}
-        >
-        <div className="flex  items-center  h-fit py-2  bg-white rounded-2xl">
-          <Tooltip
-            content={
+return (
+  <div className="h-dvh flex bg-indigo-300 p-1 lg:p-2 overflow-hidden">
+    
+    {/* Sidebar */}
+    <div
+      className={`
+        ${isChatOpen ? "hidden lg:block" : "block"}
+        w-full lg:w-3/12
+        h-full
+        p-1 lg:p-2
+      `}
+    >
+      <div className="flex items-center h-fit py-2 bg-white rounded-2xl">
+        <Tooltip
+          content={
             <div className="w-64">
               {/* Profile Section */}
               <div className="flex items-center gap-3">
@@ -180,7 +183,6 @@ const Chat = () => {
 
               {/* Info */}
               <div className="mt-4 space-y-2 text-xs">
-                
                 <div className="flex justify-between gap-3">
                   <span className="text-zinc-400">Created</span>
 
@@ -202,7 +204,6 @@ const Chat = () => {
                 </div>
               </div>
 
-              {/* Button */}
               <Link
                 to={"/update-img"}
                 className="
@@ -225,146 +226,183 @@ const Chat = () => {
                 Update Image
               </Link>
             </div>
-            }
-          >
-            <Avatar
-              src={userImageUrl}
-              name={user?.data?.fullname}
-              size="w-14 h-14"
-              className="ml-7 border-2 border-red-500"
-            />
-          </Tooltip>
-            <Logo className="ml-15"/>
-        </div>
+          }
+        >
+          <Avatar
+            src={userImageUrl}
+            name={user?.data?.fullname}
+            size="w-12 h-12 lg:w-14 lg:h-14"
+            className="ml-3 lg:ml-7 border-2 border-red-500"
+          />
+        </Tooltip>
 
-        <div className="lg:h-144 h-[75vh] w-full bg-gray-600 my-2 rounded-2xl p-2 overflow-y-auto">
-          {
-            allChats && allChats.map((items: ChatInterface)=>{
-              const otherParticipant = items.participants.find(
-                (participant: ParticipantInterface) => participant._id !== user?.data?._id
+        <Logo className="ml-4 lg:ml-15" />
+      </div>
+
+      {/* Chat List */}
+      <div className="h-[calc(100dvh-150px)] lg:h-[calc(100vh-160px)] w-full bg-gray-600 my-2 rounded-2xl p-2 overflow-y-auto">
+        {allChats &&
+          allChats.map((items: ChatInterface) => {
+            const otherParticipant = items.participants.find(
+              (participant: ParticipantInterface) =>
+                participant._id !== user?.data?._id
             );
 
-              return (
-                  <ChatMemberCard
-                    key={items._id}
-                    name={otherParticipant?.fullname || ""}
-                    lastMessage={items.lastMessage?.message || "No messages yet"}
-                    avatar={`${server}${otherParticipant?.profile_picture_url}`}
-                    isOnline={true}
-                    onClick={() => {
-                      navigate(`/chat/${otherParticipant?._id}`);
-
-                      setOpenChatId(items._id);
-                    }}
-                  />
-                  )
-            })
-
-          }
-        </div>
-
-        <div className="h-12 flex justify-between items-center rounded-2xl lg:gap-0 gap-5 ">
-          <Button onClick={handleLogout} className="ml-6 flex gap-4 hover:bg-red-400 active:scale-90" bgColor="bg-red-600" loading={logoutLoading} disabled={logoutLoading}> <LogOutIcon/> LogOut</Button>
-          <Button onClick={()=>setIsAddMemberInChatModalOpen(true)} className="mr-6 flex gap-4 hover:bg-green-400 active:scale-90" bgColor="bg-green-600"><MessageCircleDashed/>New Chat</Button>
-        </div>
-
+            return (
+              <ChatMemberCard
+                key={items._id}
+                name={otherParticipant?.fullname || ""}
+                lastMessage={
+                  items.lastMessage?.message || "No messages yet"
+                }
+                avatar={`${server}${otherParticipant?.profile_picture_url}`}
+                isOnline={true}
+                onClick={() => {
+                  navigate(`/chat/${otherParticipant?._id}`);
+                  setOpenChatId(items._id);
+                }}
+              />
+            );
+          })}
       </div>
-      <div className="lg:w-9/12 h-screen  bg-gray-600 rounded-2xl m-2">
-        {
-          isChatOpen === false 
-          ?
-           <div className="hidden lg:flex h-full flex-col justify-center items-center text-white px-6 text-center">
-            
-            <div className="bg-indigo-500 p-5 rounded-full shadow-lg mb-6">
-              <MessageCircleDashed size={50} />
-            </div>
 
-            <h1 className="text-3xl font-bold mb-3">
-              Welcome to Circle Chat
-            </h1>
+      {/* Buttons */}
+      <div className="h-12 flex justify-between items-center gap-2 px-2">
+        <Button
+          onClick={handleLogout}
+          className="flex gap-2 lg:gap-4 hover:bg-red-400 active:scale-90 text-sm"
+          bgColor="bg-red-600"
+          loading={logoutLoading}
+          disabled={logoutLoading}
+        >
+          <LogOutIcon />
+          LogOut
+        </Button>
 
-            <p className="text-gray-300 max-w-md leading-relaxed">
-              Select a conversation from the left sidebar to start chatting
-              with your friends and team members.
-            </p>
-
-            <p className="text-sm text-gray-400 mt-4">
-              Send messages, share files, and stay connected in real-time.
-            </p>
-          </div>
-          :
-          <>
-            <div
-              className={`
-                ${!isChatOpen ? "hidden lg:block" : "block"}
-                flex items-center justify-between gap-2
-                w-full bg-white rounded-t-2xl px-3 lg:px-6 py-2
-              `}
-            >
-              <Link to={'/chat'} className="block lg:hidden"><ArrowBigLeft/></Link>
-              <div className="flex gap-2">
-                <Avatar/>
-                <div>
-                  <h1 className="font-medium">{openChatUser?.email}</h1>
-                  <p className="text-sm">{openChatUser?.fullname}</p>
-                </div>
-              </div>
-
-              <div className="flex gap-5 justify-center items-center mr-8">
-                <h1 className="text-4xl hover:text-green-400 active:scale-75 cursor-pointer"><MdOutlineVideoCall /></h1>
-                <h1 className="text-3xl hover:text-green-400 active:scale-75 cursor-pointer"><IoCallOutline /></h1>
-              </div>
-            </div>
-
-            <div className="lg:h-140 h-[80vh] overflow-y-auto">
-                <SenderMessage
-                  message="Bhai ye project report dekh"
-                  time="9:12 PM"
-                  isSeen={true}
-                  avatar="https://i.pravatar.cc/150?img=5"
-                  attachment={{
-                    fileName: "MERN_Project_Report.pdf",
-                    fileSize: "2.4 MB",
-                    fileType: "PDF",
-                    fileUrl: "/files/report.pdf",
-                  }}
-                />
-                <ReceiverMessage
-                  message="Bhai message receive ho gaya"
-                  time="9:12 PM"
-                  isSeen={true}
-                />
-            </div>
-
-            <div className="flex items-center gap-2 px-2 lg:px-4 py-2">
-
-              <div className="bg-white rounded-full p-2 active:scale-95 cursor-pointer shrink-0">
-                <CgAttachment className="text-3xl lg:text-4xl text-indigo-600" />
-              </div>
-
-              <div className="flex-1">
-                <Input
-                  height="h-12 lg:h-14"
-                  placeholder="Write your message here..."
-                  onChange={(e)=>setMessage(e.target.value)}
-                  value={message}
-                />
-              </div>
-
-              <div onClick={sendMessage} className="bg-indigo-600 rounded-full p-3 lg:p-4 active:scale-95 cursor-pointer shrink-0 hover:bg-green-600">
-                <ArrowUpRight size={22} className="text-white" />
-              </div>
-
-            </div>
-          </>
-        }
+        <Button
+          onClick={() => setIsAddMemberInChatModalOpen(true)}
+          className="flex gap-2 lg:gap-4 hover:bg-green-400 active:scale-90 text-sm"
+          bgColor="bg-green-600"
+        >
+          <MessageCircleDashed />
+          New Chat
+        </Button>
       </div>
-      <AddChatSidebarMembers
-        isAddMemberInChatModalOpen={isAddMemberInChatModalOpen}
-        setIsAddMemberInChatModalOpen={setIsAddMemberInChatModalOpen}
-      />
     </div>
-  )
+
+    {/* Chat Area */}
+    <div
+      className={`
+        ${!isChatOpen ? "hidden lg:block" : "block"}
+        w-full lg:w-9/12
+        h-full
+        min-h-0
+        bg-gray-600
+        rounded-2xl
+        lg:m-2
+        overflow-hidden
+      `}
+    >
+      {isChatOpen === false ? (
+        <div className="hidden lg:flex h-full flex-col justify-center items-center text-white px-6 text-center">
+          <div className="bg-indigo-500 p-5 rounded-full shadow-lg mb-6">
+            <MessageCircleDashed size={50} />
+          </div>
+
+          <h1 className="text-3xl font-bold mb-3">
+            Welcome to Circle Chat
+          </h1>
+
+          <p className="text-gray-300 max-w-md leading-relaxed">
+            Select a conversation from the left sidebar to start chatting
+            with your friends and team members.
+          </p>
+
+          <p className="text-sm text-gray-400 mt-4">
+            Send messages, share files, and stay connected in real-time.
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col h-full">
+          
+          {/* Topbar */}
+          <div
+            className="
+              flex items-center justify-between gap-2
+              w-full bg-white rounded-t-2xl
+              px-3 lg:px-6 py-2
+            "
+          >
+            <Link to={"/chat"} className="block lg:hidden">
+              <ArrowBigLeft />
+            </Link>
+
+            <div className="flex gap-2 items-center min-w-0">
+              <Avatar />
+
+              <div className="min-w-0">
+                <h1 className="font-medium truncate text-sm lg:text-base">
+                  {openChatUser?.email}
+                </h1>
+
+                <p className="text-xs lg:text-sm truncate">
+                  {openChatUser?.fullname}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 lg:gap-5 justify-center items-center">
+              <h1 className="text-3xl lg:text-4xl hover:text-green-400 active:scale-75 cursor-pointer">
+                <MdOutlineVideoCall />
+              </h1>
+
+              <h1 className="text-2xl lg:text-3xl hover:text-green-400 active:scale-75 cursor-pointer">
+                <IoCallOutline />
+              </h1>
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-hidden">
+            <MessageArea openChatId={openChatId} />
+          </div>
+
+          {/* Input */}
+          <div className="flex items-center gap-2 px-2 lg:px-4 py-2 bg-gray-600">
+            <div className="bg-white rounded-full p-2 active:scale-95 cursor-pointer shrink-0">
+              <CgAttachment className="text-2xl lg:text-4xl text-indigo-600" />
+            </div>
+
+            <div className="flex-1">
+              <Input
+                height="h-11 lg:h-14"
+                placeholder="Write your message here..."
+                onChange={(e) => setMessage(e.target.value)}
+                value={message}
+              />
+            </div>
+
+            <Button
+              onClick={sendMessage}
+              loading={sendMessageLoading}
+              disabled={sendMessageLoading}
+              className="bg-indigo-600 rounded-full p-3 lg:p-4 active:scale-95 cursor-pointer shrink-0 hover:bg-green-600"
+            >
+              <ArrowUpRight size={22} className="text-white" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+
+    <AddChatSidebarMembers
+      isAddMemberInChatModalOpen={isAddMemberInChatModalOpen}
+      setIsAddMemberInChatModalOpen={
+        setIsAddMemberInChatModalOpen
+      }
+    />
+  </div>
+)
 }
 
 export default Chat
