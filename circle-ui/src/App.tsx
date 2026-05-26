@@ -7,6 +7,7 @@ import Chat from "./pages/Chat"
 import useAuthStore from "./store/useAuthStore"
 import { useEffect } from "react"
 import PublicRoute from "./routes/PublicRoute"
+import UpdateImage from "./pages/UpdateImage"
 
 
 
@@ -29,6 +30,7 @@ const App = () => {
         <Route element={<ProtectedRoute />}>
           <Route path="/chat" element={<Chat />} />
           <Route path="/chat/:id" element={<Chat />} />
+          <Route path="/update-img" element={<UpdateImage />} />
           {/* <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} /> */}
         </Route>

@@ -60,6 +60,8 @@ const Button = ({
         transition-all
         duration-200
 
+        active:scale-75
+
         ${
           disabled || loading
             ? "opacity-50 cursor-not-allowed"

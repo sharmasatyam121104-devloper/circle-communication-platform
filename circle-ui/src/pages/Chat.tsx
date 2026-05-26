@@ -17,6 +17,7 @@ import api from "../lib/api"
 import useAuthStore from "../store/useAuthStore"
 import AddChatSidebarMembers from "../Components/chats/AddChatSidebarMembers"
 import Tooltip from "../Components/ui/Tooltip"
+import Loader from "../Components/ui/Loder"
 
 interface LastMessageInterface {
   _id: string;
@@ -55,6 +56,7 @@ const Chat = () => {
   const [allChatsLoading, setAllChatsLoading ] = useState(false)
 
   const user = useAuthStore((state)=>state.user)
+  const userImageUrl = `${server}${user?.data?.profile_picture_url}?t=${user?.data?.updatedAt}`;
 
 
   const handleLogout = async()=>{
@@ -91,6 +93,14 @@ const Chat = () => {
     getAllChats()
   },[])
 
+  if(allChatsLoading){
+    return (
+      <div className="flex items-center justify-center">
+        <Loader size="lg"/>
+      </div>
+    )
+  }
+
 
   return (
     <div className="h-screen  flex bg-indigo-300 p-2">
@@ -103,73 +113,77 @@ const Chat = () => {
         <div className="flex  items-center  h-fit py-2  bg-white rounded-2xl">
           <Tooltip
             content={
-              <div className="w-80">
-                {/* Profile Section */}
-                <div className="flex items-center gap-4">
-                  <img
-                    src={
-                      `${server}${user?.data?.profile_picture_url}` || ""
-                    }
-                    alt="profile"
-                    className="w-16 h-16 rounded-full object-cover border border-zinc-700"
-                  />
+            <div className="w-64">
+              {/* Profile Section */}
+              <div className="flex items-center gap-3">
+                <img
+                  src={`${server}${user?.data?.profile_picture_url}` || ""}
+                  alt="profile"
+                  className="w-12 h-12 rounded-full object-cover border border-zinc-700"
+                />
 
-                  <div>
-                    <h2 className="text-lg font-semibold">
-                      {user?.data?.fullname}
-                    </h2>
+                <div>
+                  <h2 className="text-sm font-semibold">
+                    {user?.data?.fullname}
+                  </h2>
 
-                    <p className="text-sm text-zinc-400 break-all">
-                      {user?.data?.email}
-                    </p>
-                  </div>
+                  <p className="text-xs text-zinc-400 break-all">
+                    {user?.data?.email}
+                  </p>
                 </div>
-
-                {/* Info */}
-                <div className="mt-5 space-y-3 text-sm">
-                  <div className="flex justify-between items-center">
-                    <span className="text-zinc-400">Created At</span>
-
-                    <span>
-                    {user?.data?.createdAt
-                      ? new Date(user.data.createdAt).toLocaleDateString()
-                      : "N/A"}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <span className="text-zinc-400">Last Login</span>
-
-                    <span>
-                      {user?.data?.last_login
-                      ? new Date(user.data.last_login).toLocaleDateString()
-                      : "N/A"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Button */}
-                <button
-                  className="
-                    mt-5
-                    w-full
-                    bg-white
-                    text-black
-                    py-2.5
-                    rounded-xl
-                    font-medium
-                    hover:bg-zinc-200
-                    transition-all
-                    active:scale-75
-                  "
-                >
-                  Update Image
-                </button>
               </div>
+
+              {/* Info */}
+              <div className="mt-4 space-y-2 text-xs">
+                
+                <div className="flex justify-between gap-3">
+                  <span className="text-zinc-400">Created</span>
+
+                  <span className="text-right">
+                    {user?.data?.createdAt
+                      ? new Date(user.data.createdAt).toLocaleString()
+                      : "N/A"}
+                  </span>
+                </div>
+
+                <div className="flex justify-between gap-3">
+                  <span className="text-zinc-400">Last Login</span>
+
+                  <span className="text-right">
+                    {user?.data?.last_login
+                      ? new Date(user.data.last_login).toLocaleString()
+                      : "N/A"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Button */}
+              <Link
+                to={"/update-img"}
+                className="
+                  mt-5
+                  w-full
+                  flex
+                  items-center
+                  justify-center
+                  bg-white
+                  text-black
+                  py-2
+                  rounded-lg
+                  text-sm
+                  font-medium
+                  hover:bg-zinc-200
+                  transition-all
+                  active:scale-95
+                "
+              >
+                Update Image
+              </Link>
+            </div>
             }
           >
             <Avatar
-              src={`${server}${user?.data?.profile_picture_url}`}
+              src={userImageUrl}
               name={user?.data?.fullname}
               size="w-14 h-14"
               className="ml-7 border-2 border-red-500"
@@ -178,7 +192,7 @@ const Chat = () => {
             <Logo className="ml-15"/>
         </div>
 
-        <div className="lg:h-144 h-[82vh] w-full bg-gray-600 my-2 rounded-2xl p-2 overflow-y-auto">
+        <div className="lg:h-144 h-[75vh] w-full bg-gray-600 my-2 rounded-2xl p-2 overflow-y-auto">
           {
             allChats && allChats.map((items: ChatInterface)=>{
               const otherParticipant = items.participants.find(
@@ -200,13 +214,13 @@ const Chat = () => {
           }
         </div>
 
-        <div className="  h-12 flex justify-between items-center rounded-2xl ">
+        <div className="h-12 flex justify-between items-center rounded-2xl lg:gap-0 gap-5 ">
           <Button onClick={handleLogout} className="ml-6 flex gap-4 hover:bg-red-400 active:scale-90" bgColor="bg-red-600" loading={logoutLoading} disabled={logoutLoading}> <LogOutIcon/> LogOut</Button>
           <Button onClick={()=>setIsAddMemberInChatModalOpen(true)} className="mr-6 flex gap-4 hover:bg-green-400 active:scale-90" bgColor="bg-green-600"><MessageCircleDashed/>New Chat</Button>
         </div>
 
       </div>
-      <div className="lg:w-9/12 w-full bg-gray-600 rounded-2xl m-2">
+      <div className="lg:w-9/12   bg-gray-600 rounded-2xl m-2">
         {
           isChatOpen === false 
           ?
