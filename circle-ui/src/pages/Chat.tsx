@@ -16,6 +16,29 @@ import { toast } from "sonner"
 import api from "../lib/api"
 import useAuthStore from "../store/useAuthStore"
 import AddChatSidebarMembers from "../Components/chats/AddChatSidebarMembers"
+import Tooltip from "../Components/ui/Tooltip"
+
+interface LastMessageInterface {
+  _id: string;
+  message: string;
+  createdAt: string;
+}
+
+interface ParticipantInterface {
+  _id: string;
+  fullname: string;
+  email: string;
+  profile_picture_url: string;
+}
+
+interface ChatInterface {
+  _id: string;
+  participants: ParticipantInterface[];
+  lastMessage: LastMessageInterface;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
 
 const server = import.meta.env.VITE_SERVER;
 
@@ -28,7 +51,7 @@ const Chat = () => {
   const setUser = useAuthStore.getState().setUser;
 
   const [isAddMemberInChatModalOpen, setIsAddMemberInChatModalOpen] = useState(false)
-  const [allChats, setAllChats] = useState([])
+  const [allChats, setAllChats] = useState<ChatInterface[]>([])
   const [allChatsLoading, setAllChatsLoading ] = useState(false)
 
   const user = useAuthStore((state)=>state.user)
@@ -55,7 +78,7 @@ const Chat = () => {
       try {
         setAllChatsLoading(true)
         const {data} = await api.get('/chat')
-        console.log(data);
+        setAllChats(data.data)
       } 
       catch (error) {
         clientCatchError(error)
@@ -78,24 +101,103 @@ const Chat = () => {
           `}
         >
         <div className="flex  items-center  h-fit py-2  bg-white rounded-2xl">
-          <Avatar
-            src={`${server}${user?.data?.profile_picture_url}`}
-            name={user?.data?.fullname}
-            size="w-14 h-14"
-            className="ml-7 border-2 border-red-500"
-          />
+          <Tooltip
+            content={
+              <div className="w-80">
+                {/* Profile Section */}
+                <div className="flex items-center gap-4">
+                  <img
+                    src={
+                      `${server}${user?.data?.profile_picture_url}` || ""
+                    }
+                    alt="profile"
+                    className="w-16 h-16 rounded-full object-cover border border-zinc-700"
+                  />
+
+                  <div>
+                    <h2 className="text-lg font-semibold">
+                      {user?.data?.fullname}
+                    </h2>
+
+                    <p className="text-sm text-zinc-400 break-all">
+                      {user?.data?.email}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Info */}
+                <div className="mt-5 space-y-3 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-400">Created At</span>
+
+                    <span>
+                    {user?.data?.createdAt
+                      ? new Date(user.data.createdAt).toLocaleDateString()
+                      : "N/A"}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-400">Last Login</span>
+
+                    <span>
+                      {user?.data?.last_login
+                      ? new Date(user.data.last_login).toLocaleDateString()
+                      : "N/A"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Button */}
+                <button
+                  className="
+                    mt-5
+                    w-full
+                    bg-white
+                    text-black
+                    py-2.5
+                    rounded-xl
+                    font-medium
+                    hover:bg-zinc-200
+                    transition-all
+                    active:scale-75
+                  "
+                >
+                  Update Image
+                </button>
+              </div>
+            }
+          >
+            <Avatar
+              src={`${server}${user?.data?.profile_picture_url}`}
+              name={user?.data?.fullname}
+              size="w-14 h-14"
+              className="ml-7 border-2 border-red-500"
+            />
+          </Tooltip>
             <Logo className="ml-15"/>
         </div>
 
         <div className="lg:h-144 h-[82vh] w-full bg-gray-600 my-2 rounded-2xl p-2 overflow-y-auto">
-          <ChatMemberCard
-            name="Satyam Sharma"
-            lastMessage="Bhai project complete ho gaya?"
-            avatar="https://i.pravatar.cc/150?img=8"
-            unreadCount={3}
-            isOnline={true}
-            onClick={() => navigate("/chat/123")}
-          />
+          {
+            allChats && allChats.map((items: ChatInterface)=>{
+              const otherParticipant = items.participants.find(
+                (participant: ParticipantInterface) => participant._id !== user?.data?._id
+            );
+
+              return (
+                  <ChatMemberCard
+                    key={items._id}
+                    name={otherParticipant?.fullname || ""}
+                    lastMessage={items.lastMessage?.message || "No messages yet"}
+                    avatar={`${server}${otherParticipant?.profile_picture_url}`}
+                    isOnline={true}
+                    onClick={() => navigate(`/chat/${otherParticipant?._id}`)}
+                  />
+                  )
+            })
+
+          }
         </div>
 
         <div className="  h-12 flex justify-between items-center rounded-2xl ">

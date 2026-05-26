@@ -46,7 +46,7 @@ export const getAllChats = async(req: SessionInterface, res: Response)=>{
         .populate("lastMessage")
         .populate({
             path: "participants",
-            select: "fullname email",
+            select: "fullname email profile_picture_url",
         })
         .sort({ updatedAt: -1 });
 
