@@ -12,6 +12,7 @@ const Signup = () => {
       password: ""
     })
     const [loading, setLoading] = useState(false)
+    const [googleLoading, setGoogleLoading] = useState(false);
     const navigate = useNavigate()
 
     const handleSignup = async(e: SyntheticEvent<HTMLFormElement>) => {
@@ -30,12 +31,25 @@ const Signup = () => {
       }
     };
 
+    const handleGoogleLogin = () => {
+      try {
+        setGoogleLoading(true)
+        window.location.href = `${import.meta.env.VITE_SERVER}/user/google`;
+      } 
+      catch (error) {
+        setGoogleLoading(false)
+        return clientCatchError(error)
+      }
+    };
+
   return (
     <SignupComponents 
       formData={formData}
       setFormData={setFormData}
       loading={loading}
       handleSignup={handleSignup}
+      handleGoogleLogin={handleGoogleLogin}
+      googleLoading={googleLoading}
     />
   )
 }

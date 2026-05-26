@@ -15,6 +15,7 @@ import { useState } from "react"
 import { toast } from "sonner"
 import api from "../lib/api"
 import useAuthStore from "../store/useAuthStore"
+import AddChatSidebarMembers from "../Components/chats/AddChatSidebarMembers"
 
 const Chat = () => {
   const navigate = useNavigate();
@@ -23,6 +24,8 @@ const Chat = () => {
 
   const [logoutLoading, setLogoutLoading] = useState(false)
   const setUser = useAuthStore.getState().setUser;
+
+  const [isAddMemberInChatModalOpen, setIsAddMemberInChatModalOpen] = useState(false)
 
   const handleLogout = async()=>{
     try {
@@ -67,7 +70,7 @@ const Chat = () => {
 
         <div className="  h-12 flex justify-between items-center rounded-2xl ">
           <Button onClick={handleLogout} className="ml-6 flex gap-4 hover:bg-red-400 active:scale-90" bgColor="bg-red-600" loading={logoutLoading} disabled={logoutLoading}> <LogOutIcon/> LogOut</Button>
-          <Button className="mr-6 flex gap-4 hover:bg-green-400 active:scale-90" bgColor="bg-green-600"><MessageCircleDashed/>New Chat</Button>
+          <Button onClick={()=>setIsAddMemberInChatModalOpen(true)} className="mr-6 flex gap-4 hover:bg-green-400 active:scale-90" bgColor="bg-green-600"><MessageCircleDashed/>New Chat</Button>
         </div>
 
       </div>
@@ -159,6 +162,10 @@ const Chat = () => {
           </>
         }
       </div>
+      <AddChatSidebarMembers
+        isAddMemberInChatModalOpen={isAddMemberInChatModalOpen}
+        setIsAddMemberInChatModalOpen={setIsAddMemberInChatModalOpen}
+      />
     </div>
   )
 }

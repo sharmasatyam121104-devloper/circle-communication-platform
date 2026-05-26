@@ -17,9 +17,11 @@ type SignupProp = {
   setFormData: Dispatch<SetStateAction<FormDataType>>;
   loading: boolean;
   handleSignup: (e: SyntheticEvent<HTMLFormElement>) => void;
+  handleGoogleLogin:() => void;
+  googleLoading: boolean
 }
 
-const SignupComponents = ({formData, setFormData, loading, handleSignup}: SignupProp) => {
+const SignupComponents = ({formData, setFormData, loading, handleSignup, handleGoogleLogin, googleLoading}: SignupProp) => {
 
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>)=>{
@@ -71,7 +73,7 @@ const SignupComponents = ({formData, setFormData, loading, handleSignup}: Signup
               </form>
           </div>
           <div className="px-6">
-            <Button loading={loading} className="mt-6 active:scale-50" width="w-full" bgColor="bg-rose-500">
+            <Button onClick={handleGoogleLogin} disabled={googleLoading} loading={googleLoading} className="mt-6 active:scale-50" width="w-full" bgColor="bg-rose-500">
               <FcGoogle size={20} />
 
               <span className="text-[#ebdedd] font-medium ml-4">
