@@ -3,6 +3,9 @@ import Button from "../ui/Button";
 import Input from "../ui/Input";
 import { useState, type SyntheticEvent } from "react";
 import clientCatchError from "../../lib/clientCatchError";
+import api from "../../lib/api";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 type AddChatSidebarMembersProps = {
   isAddMemberInChatModalOpen: boolean;
@@ -12,19 +15,32 @@ type AddChatSidebarMembersProps = {
 const AddChatSidebarMembers = ({isAddMemberInChatModalOpen, setIsAddMemberInChatModalOpen}: AddChatSidebarMembersProps) => {
 
     const [email, setEmail] = useState("")
+    const [loading, setLoading] = useState(false)
+    const navigate = useNavigate()
 
     const handleAddMemberInChat = async(e: SyntheticEvent<HTMLFormElement>)=>{
       e.preventDefault()
       try {
+        setLoading(true)
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         const isValid = emailRegex.test(email);
         if (!isValid) {
           throw new Error("Inavlid Email")
         }
-        console.log(email);
+        const payload = {
+          email
+        }
+        const {data} = await api.post("/chat", payload)
+        setIsAddMemberInChatModalOpen(false)
+        setEmail("")
+        navigate('/chat')
+        toast.info(data.message)
       } 
       catch (error) {
         clientCatchError(error)  
+      }
+      finally{
+        setLoading(false)
       }
     }
 
@@ -40,7 +56,7 @@ const AddChatSidebarMembers = ({isAddMemberInChatModalOpen, setIsAddMemberInChat
                     onChange={(e)=>setEmail(e.target.value)}
                   />
                   <div className="mt-8 flex items-center gap-4 ">
-                    <Button type="submit"  bgColor="bg-green-600" className="active:scale-75"><Plus/> Add Member</Button>
+                    <Button type="submit" loading={loading} disabled={loading} bgColor="bg-green-600" className="active:scale-75"><Plus/> Add Member</Button>
                     <Button onClick={()=>setIsAddMemberInChatModalOpen(false)} bgColor="bg-rose-600" className="active:scale-75"><X/>Cancel Now</Button>
                   </div>
                 </form>

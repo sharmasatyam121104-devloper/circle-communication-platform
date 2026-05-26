@@ -2,11 +2,22 @@ import {  Response } from "express";
 import { catchError, tryError } from "../../utils/serverErrorHandler";
 import { SessionInterface } from "../user/user.interface";
 import ChatModel from "./chat.model";
+import UserModel from "../user/user.model";
 
 export const createChat = async(req: SessionInterface, res: Response)=>{
     try {
         const id = req.id?.toString();
-        const participantsId = req.body.participantsId;
+        const {email} = req.body;
+        if(!email){
+            throw tryError("Email is required", 400)
+        }
+
+        const participantsUser = await UserModel.findOne({email})
+        if(!participantsUser){
+            throw tryError("User not avilable for this email id, Please enter correct email id", 404)
+        }
+
+        const participantsId = participantsUser?._id 
 
         if (!id || !participantsId) {
         throw tryError("Invalid participants", 400);

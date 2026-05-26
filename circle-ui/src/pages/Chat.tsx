@@ -9,7 +9,7 @@ import SenderMessage from "../Components/chats/SenderMessage"
 import ReceiverMessage from "../Components/chats/ReciverMessage"
 import { MdOutlineVideoCall } from "react-icons/md"
 import ChatMemberCard from "../Components/chats/ChatMemberCard"
-import { Link, useNavigate, useParams } from "react-router-dom"
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
 import clientCatchError from "../lib/clientCatchError"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
@@ -45,6 +45,7 @@ const server = import.meta.env.VITE_SERVER;
 
 const Chat = () => {
   const navigate = useNavigate();
+  const location = useLocation()
   const { id } = useParams();
   const isChatOpen = Boolean(id); 
 
@@ -54,10 +55,15 @@ const Chat = () => {
   const [isAddMemberInChatModalOpen, setIsAddMemberInChatModalOpen] = useState(false)
   const [allChats, setAllChats] = useState<ChatInterface[]>([])
   const [allChatsLoading, setAllChatsLoading ] = useState(false)
+  const [openChatUser , setOpenChatUser] = useState<ParticipantInterface | null>(null)
+  const [openChatId, setOpenChatId] = useState("")
+  const [message, setMessage] = useState("")
+  const [sendMessageLoading, setSendMessageLoading] = useState(false)
 
   const user = useAuthStore((state)=>state.user)
   const userImageUrl = `${server}${user?.data?.profile_picture_url}?t=${user?.data?.updatedAt}`;
 
+  const openUserId = location.pathname.split("/").pop()
 
   const handleLogout = async()=>{
     try {
@@ -91,7 +97,45 @@ const Chat = () => {
     }
 
     getAllChats()
-  },[])
+  },[isAddMemberInChatModalOpen])
+
+  useEffect(()=>{
+    if (!allChats || !openUserId) return;
+
+    allChats.forEach((items: ChatInterface) => {
+
+      const otherParticipant = items.participants.find(
+        (participant: ParticipantInterface) =>
+          participant._id !== user?.data?._id
+      );
+
+      if (otherParticipant?._id === openUserId) {
+        setOpenChatUser(otherParticipant);
+      }
+    });
+
+  },[allChats, openChatUser, user, openUserId])
+
+  const sendMessage = async()=>{
+      if(message === ""){
+          throw new Error("Please enter some message")
+      }
+      const payload = {
+        message: message.trim()
+      }
+      
+      try {
+        setSendMessageLoading(true)
+        alert(payload.message)
+      } 
+      catch (error) {
+        clientCatchError(error)
+      }
+      finally{
+        setSendMessageLoading(false)
+      }
+  }
+
 
   if(allChatsLoading){
     return (
@@ -100,6 +144,7 @@ const Chat = () => {
       </div>
     )
   }
+
 
 
   return (
@@ -206,7 +251,11 @@ const Chat = () => {
                     lastMessage={items.lastMessage?.message || "No messages yet"}
                     avatar={`${server}${otherParticipant?.profile_picture_url}`}
                     isOnline={true}
-                    onClick={() => navigate(`/chat/${otherParticipant?._id}`)}
+                    onClick={() => {
+                      navigate(`/chat/${otherParticipant?._id}`);
+
+                      setOpenChatId(items._id);
+                    }}
                   />
                   )
             })
@@ -220,7 +269,7 @@ const Chat = () => {
         </div>
 
       </div>
-      <div className="lg:w-9/12   bg-gray-600 rounded-2xl m-2">
+      <div className="lg:w-9/12 h-screen  bg-gray-600 rounded-2xl m-2">
         {
           isChatOpen === false 
           ?
@@ -256,8 +305,8 @@ const Chat = () => {
               <div className="flex gap-2">
                 <Avatar/>
                 <div>
-                  <h1 className="font-medium">dummy@gmail.com</h1>
-                  <p className="text-sm">dummy name</p>
+                  <h1 className="font-medium">{openChatUser?.email}</h1>
+                  <p className="text-sm">{openChatUser?.fullname}</p>
                 </div>
               </div>
 
@@ -297,10 +346,12 @@ const Chat = () => {
                 <Input
                   height="h-12 lg:h-14"
                   placeholder="Write your message here..."
+                  onChange={(e)=>setMessage(e.target.value)}
+                  value={message}
                 />
               </div>
 
-              <div className="bg-indigo-600 rounded-full p-3 lg:p-4 active:scale-95 cursor-pointer shrink-0 hover:bg-green-600">
+              <div onClick={sendMessage} className="bg-indigo-600 rounded-full p-3 lg:p-4 active:scale-95 cursor-pointer shrink-0 hover:bg-green-600">
                 <ArrowUpRight size={22} className="text-white" />
               </div>
 
