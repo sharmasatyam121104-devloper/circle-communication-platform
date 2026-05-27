@@ -17,6 +17,7 @@ import AddChatSidebarMembers from "../Components/chats/AddChatSidebarMembers"
 import Tooltip from "../Components/ui/Tooltip"
 import Loader from "../Components/ui/Loder"
 import MessageArea from "../Components/chats/MessageArea"
+import LogoutComponents from "../Components/page-components/LogoutComponents"
 
 interface LastMessageInterface {
   _id: string;
@@ -48,14 +49,14 @@ const Chat = () => {
   const { id } = useParams();
   const isChatOpen = Boolean(id); 
 
-  const [logoutLoading, setLogoutLoading] = useState(false)
-  const setUser = useAuthStore.getState().setUser;
+  
 
   const [isAddMemberInChatModalOpen, setIsAddMemberInChatModalOpen] = useState(false)
   const [allChats, setAllChats] = useState<ChatInterface[]>([])
   const [allChatsLoading, setAllChatsLoading ] = useState(false)
   const [openChatUser , setOpenChatUser] = useState<ParticipantInterface | null>(null)
   const [openChatId, setOpenChatId] = useState("")
+
   const [message, setMessage] = useState("")
   const [sendMessageLoading, setSendMessageLoading] = useState(false)
 
@@ -64,21 +65,7 @@ const Chat = () => {
 
   const openUserId = location.pathname.split("/").pop()
 
-  const handleLogout = async()=>{
-    try {
-      setLogoutLoading(true)
-      const {data} = await api.get('/user/logout')
-      setUser(null);
-      toast.info(data.message)
-      navigate('/login')
-    } 
-    catch (error) {
-      clientCatchError(error)  
-    }
-    finally{
-      setLogoutLoading(false)
-    }
-  }
+
 
   useEffect(()=>{
     const getAllChats = async()=>{
@@ -268,16 +255,7 @@ return (
 
       {/* Buttons */}
       <div className="h-12 flex justify-between items-center gap-2 px-2">
-        <Button
-          onClick={handleLogout}
-          className="flex gap-2 lg:gap-4 hover:bg-red-400 active:scale-90 text-sm"
-          bgColor="bg-red-600"
-          loading={logoutLoading}
-          disabled={logoutLoading}
-        >
-          <LogOutIcon />
-          LogOut
-        </Button>
+        <LogoutComponents/>
 
         <Button
           onClick={() => setIsAddMemberInChatModalOpen(true)}
