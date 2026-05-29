@@ -17,6 +17,8 @@ import Tooltip from "../Components/ui/Tooltip"
 import Loader from "../Components/ui/Loder"
 import MessageArea from "../Components/chats/MessageArea"
 import LogoutComponents from "../Components/page-components/LogoutComponents"
+import ChatAttachment from "../Components/chats/ChatAttachment"
+import UploadProgressBar from "../Components/ui/UploadProgressBar"
 
 interface LastMessageInterface {
   _id: string;
@@ -81,6 +83,11 @@ const Chat = () => {
 
   const openUserId = location.pathname.split("/").pop()
 
+  const [attachment, setAttachment] = useState<File | null>(null)
+  const [uploadProgress, setUploadProgress] = useState(0)
+
+  const [newLastMessage, setNewLastmessage] = useState<string | null>(null)
+
 
 
   useEffect(()=>{
@@ -118,28 +125,57 @@ const Chat = () => {
 
   },[allChats, openChatUser, user, openUserId])
 
-  const sendMessage = async()=>{
-      if(message === ""){
-          throw new Error("Please enter some message")
-      }
-      const payload = {
-        chatId: openChatId,
-        text: message.trim()
+
+  const sendMessage = async () => {
+    try {
+      setSendMessageLoading(true);
+
+      const finalMessage = message.trim();
+
+      if (!finalMessage && !attachment) {
+        throw new Error("Please enter message or attach a file");
       }
 
-      try {
-        setSendMessageLoading(true)
-        const {data} = await api.post('/message', payload)
-        setAddMessageInChat(data.data)
-        setMessage("")
-      } 
-      catch (error) {
-        clientCatchError(error)
+      const formData = new FormData();
+      formData.append("chatId", openChatId);
+      formData.append("text", finalMessage || "file");
+
+      if (attachment) {
+        formData.append("attachment", attachment);
       }
-      finally{
-        setSendMessageLoading(false)
-      }
-  }
+
+      setNewLastmessage(finalMessage || "file")
+
+      const { data } = await api.post(
+        "/message",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (e) => {
+            if (!e.total) return;
+
+            const percent = Math.round((e.loaded * 100) / e.total);
+            setUploadProgress(percent);
+          },
+        }
+      );
+
+      setAddMessageInChat(data.data);
+    }
+     catch (error) {
+      setUploadProgress(0);
+      clientCatchError(error);
+    } 
+    finally {
+      setMessage("");
+      setAttachment(null);
+      setUploadProgress(0);
+      setSendMessageLoading(false);
+    }
+  };
+
 
   if(allChatsLoading){
     return (
@@ -258,7 +294,9 @@ return (
                 key={items._id}
                 name={otherParticipant?.fullname || ""}
                 lastMessage={
-                  items.lastMessage?.text || "No messages yet"
+                  openChatId === items._id
+                    ? (newLastMessage ?? items.lastMessage?.text)
+                    : (items.lastMessage?.text || "No messages yet")
                 }
                 avatar={`${server}${otherParticipant?.profile_picture_url}`}
                 isOnline={true}
@@ -365,17 +403,80 @@ return (
 
           {/* Input */}
           <div className="flex items-center gap-2 px-2 lg:px-4 py-2 bg-gray-600">
-            <div className="bg-white rounded-full p-2 active:scale-95 cursor-pointer shrink-0">
+            <div className="bg-white rounded-full p-2 active:scale-95 cursor-pointer shrink-0 relative">
               <CgAttachment className="text-2xl lg:text-4xl text-indigo-600" />
+              <ChatAttachment file={attachment} setFile={setAttachment}/>
             </div>
 
-            <div className="flex-1">
-              <Input
-                height="h-11 lg:h-14"
-                placeholder="Write your message here..."
-                onChange={(e) => setMessage(e.target.value)}
-                value={message}
-              />
+            <div className="flex-1 flex flex-col gap-2">
+
+                {attachment && (
+                  <div className="relative w-fit max-w-55 lg:max-w-75 p-2 bg-gray-100 rounded-xl">
+
+                    {/* IMAGE */}
+                    {attachment.type.startsWith("image/") && (
+                      <img
+                        src={URL.createObjectURL(attachment)}
+                        className="w-32 h-32 lg:w-44 lg:h-44 object-cover rounded-xl border"
+                      />
+                    )}
+
+                    {/* VIDEO */}
+                    {attachment.type.startsWith("video/") && (
+                      <video
+                        src={URL.createObjectURL(attachment)}
+                        controls
+                        className="w-40 h-40 lg:w-52 lg:h-52 rounded-xl"
+                      />
+                    )}
+
+                    {/* PDF */}
+                    {attachment.type === "application/pdf" && (
+                      <div className="w-40 h-40 lg:w-52 lg:h-52 flex flex-col items-center justify-center bg-white rounded-xl border">
+                        <p className="text-red-500 font-semibold">PDF File</p>
+                        <a
+                          href={URL.createObjectURL(attachment)}
+                          target="_blank"
+                          className="text-blue-600 text-sm underline"
+                        >
+                          Open PDF
+                        </a>
+                      </div>
+                    )}
+
+                    {/* OTHER FILES */}
+                    {!attachment.type.startsWith("image/") &&
+                      !attachment.type.startsWith("video/") &&
+                      attachment.type !== "application/pdf" && (
+                        <div className="w-40 h-40 flex items-center justify-center bg-gray-200 rounded-xl">
+                          <p className="text-sm text-gray-700 truncate">
+                            {attachment.name}
+                          </p>
+                        </div>
+                      )}
+
+                    {/* CLOSE BUTTON */}
+                    <button
+                      onClick={() => setAttachment(null)}
+                      className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center text-sm"
+                    >
+                      ✕
+                    </button>
+
+                  </div>
+                )}
+
+                {sendMessageLoading && (
+                  <UploadProgressBar progress={uploadProgress} />
+                )}
+
+                <Input
+                    height="h-11 lg:h-14"
+                    placeholder="Write your message here..."
+                    onChange={(e) => setMessage(e.target.value)}
+                    value={message}
+                />
+
             </div>
 
             <Button

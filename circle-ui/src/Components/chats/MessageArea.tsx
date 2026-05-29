@@ -59,9 +59,17 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat}: MessageAreaPr
     useEffect(()=>{
         const getAllMessageOfChat = async()=>{
             try {
+                if(!openChatId) return;
+
                 setAllMessgaeOfChatLoading(true)
                 const {data} = await api.get(`/message/${openChatId}`)
-                setAllMessgaeOfChat(data.chatMesssages)
+                setAllMessgaeOfChat((prev) => {
+                    const newMsgs = data.chatMesssages;
+
+                    if (!prev) return newMsgs;
+
+                    return newMsgs;
+                });
             } 
             catch (error) {
                 clientCatchError(error)
@@ -92,7 +100,7 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat}: MessageAreaPr
 
     if(allMessageOfChatLoading){
         return (
-            <div className="flex justify-center items-center m-auto">
+            <div className="flex justify-center items-center h-full w-full">
                 <Loader size="lg"/>
             </div>
         )
@@ -103,7 +111,7 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat}: MessageAreaPr
             {
                 allMessageOfChat?.map((item: MessageInterface)=>{
                     return (
-                        <>
+                        <div key={item.updatedAt}>
                             {
                                 item.sender === user?.data._id ? 
                                 <ReceiverMessage
@@ -125,7 +133,6 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat}: MessageAreaPr
                                 <SenderMessage
                                     message={item.text}
                                     time={new Date(item.updatedAt).toLocaleString()}
-                                    isSeen={true}
                                     avatar={`${server}${openChatUser?.profile_picture_url}`}
                                     attachment={
                                         item.attachment
@@ -139,7 +146,7 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat}: MessageAreaPr
                                     }
                                 />
                             }
-                        </>
+                        </div>
                     )
                 })
             }

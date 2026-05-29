@@ -1,5 +1,4 @@
-import { IoMdCheckmark } from "react-icons/io";
-import { IoCheckmarkDoneSharp } from "react-icons/io5";
+
 import { HiDocumentText } from "react-icons/hi2";
 import { FiDownload } from "react-icons/fi";
 import Avatar from "../ui/Avtar";
@@ -15,7 +14,6 @@ type SenderMessageProps = {
   message?: string;
   time: string;
   avatar?: string;
-  isSeen?: boolean;
   attachment?: AttachmentProps;
 };
 
@@ -23,7 +21,6 @@ const SenderMessage = ({
   message,
   time,
   avatar,
-  isSeen = false,
   attachment,
 }: SenderMessageProps) => {
   return (
@@ -86,12 +83,6 @@ const SenderMessage = ({
               <p className="text-[11px] text-indigo-100">
                 {time}
               </p>
-
-              {isSeen ? (
-                <IoCheckmarkDoneSharp className="text-blue-300 text-sm" />
-              ) : (
-                <IoMdCheckmark className="text-sm text-indigo-100" />
-              )}
             </div>
           </div>
         </div>
