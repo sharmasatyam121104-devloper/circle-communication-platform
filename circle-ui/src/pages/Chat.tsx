@@ -1,4 +1,4 @@
-import { ArrowBigLeft, ArrowUpRight, LogOutIcon, MessageCircleDashed } from "lucide-react"
+import { ArrowBigLeft, ArrowUpRight, MessageCircleDashed } from "lucide-react"
 import Avatar from "../Components/ui/Avtar"
 import Button from "../Components/ui/Button"
 import Logo from "../Components/ui/Logo"
@@ -10,7 +10,6 @@ import ChatMemberCard from "../Components/chats/ChatMemberCard"
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
 import clientCatchError from "../lib/clientCatchError"
 import { useEffect, useState } from "react"
-import { toast } from "sonner"
 import api from "../lib/api"
 import useAuthStore from "../store/useAuthStore"
 import AddChatSidebarMembers from "../Components/chats/AddChatSidebarMembers"
@@ -21,7 +20,7 @@ import LogoutComponents from "../Components/page-components/LogoutComponents"
 
 interface LastMessageInterface {
   _id: string;
-  message: string;
+  text: string;
   createdAt: string;
 }
 
@@ -32,6 +31,13 @@ interface ParticipantInterface {
   profile_picture_url: string;
 }
 
+interface AttachmentInterface {
+    url: string;
+    type: string;
+    fileName: string;
+    fileSize: number;
+}
+
 interface ChatInterface {
   _id: string;
   participants: ParticipantInterface[];
@@ -39,6 +45,15 @@ interface ChatInterface {
   createdAt: string;
   updatedAt: string;
   __v: number;
+}
+
+export interface MessageInterface {
+    chat: string;
+    sender: string;
+    text: string;
+    attachment?: AttachmentInterface;
+    status: "sent" | "delivered" | "read"
+    updatedAt: string
 }
 
 const server = import.meta.env.VITE_SERVER;
@@ -58,6 +73,7 @@ const Chat = () => {
   const [openChatId, setOpenChatId] = useState("")
 
   const [message, setMessage] = useState("")
+  const [addMessageInChat, setAddMessageInChat] = useState<MessageInterface | null>(null)
   const [sendMessageLoading, setSendMessageLoading] = useState(false)
 
   const user = useAuthStore((state)=>state.user)
@@ -107,12 +123,15 @@ const Chat = () => {
           throw new Error("Please enter some message")
       }
       const payload = {
-        message: message.trim()
+        chatId: openChatId,
+        text: message.trim()
       }
 
       try {
         setSendMessageLoading(true)
-        alert(payload.message)
+        const {data} = await api.post('/message', payload)
+        setAddMessageInChat(data.data)
+        setMessage("")
       } 
       catch (error) {
         clientCatchError(error)
@@ -121,7 +140,6 @@ const Chat = () => {
         setSendMessageLoading(false)
       }
   }
-
 
   if(allChatsLoading){
     return (
@@ -240,7 +258,7 @@ return (
                 key={items._id}
                 name={otherParticipant?.fullname || ""}
                 lastMessage={
-                  items.lastMessage?.message || "No messages yet"
+                  items.lastMessage?.text || "No messages yet"
                 }
                 avatar={`${server}${otherParticipant?.profile_picture_url}`}
                 isOnline={true}
@@ -316,7 +334,7 @@ return (
             </Link>
 
             <div className="flex gap-2 items-center min-w-0">
-              <Avatar />
+              <Avatar src={`${server}${openChatUser?.profile_picture_url}`}/>
 
               <div className="min-w-0">
                 <h1 className="font-medium truncate text-sm lg:text-base">
@@ -342,7 +360,7 @@ return (
 
           {/* Messages */}
           <div className="flex-1 overflow-hidden">
-            <MessageArea openChatId={openChatId} />
+            <MessageArea openChatId={openChatId} openChatUser={openChatUser} addMessageInChat={addMessageInChat}/>
           </div>
 
           {/* Input */}

@@ -54,7 +54,10 @@ export const getAllChats = async(req: SessionInterface, res: Response)=>{
         }
 
         const allChats = await ChatModel.find({participants: id})
-        .populate("lastMessage")
+        .populate({
+            path: "lastMessage",
+            select: "text createdAt"
+        })
         .populate({
             path: "participants",
             select: "fullname email profile_picture_url",
