@@ -24,10 +24,12 @@ import "./config/passport.config";
 
 import UserRouter from "./modules/user/user.routes";
 import ChatRouter from "./modules/chat/chat.routes";
+import MessageRoouter from "./modules/message/message.routes";
 import { AuthMiddleware } from "./modules/user/user.middleware";
 
 app.use('/user', UserRouter)
 app.use('/chat', AuthMiddleware, ChatRouter)
+app.use('/message', AuthMiddleware, MessageRoouter)
 
 
 app.get("/test", (req, res) => {

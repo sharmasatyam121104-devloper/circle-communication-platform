@@ -20,24 +20,27 @@ const messageschema = new Schema<MessageInterface>({
     attachment: {
         url: {
             type: String,
-            required: true
         },
         type: {
             type: String,
             enum:  ["image", "video", "file", "audio"],
-            fileName: String,
-            fileSize: Number,
         },
-        status: {
+        fileName: {
             type: String,
-            enum: ["sent", "delivered", "read"],
-            default: "sent",
-        }
+        },
+        fileSize: {
+            type: Number,
+        },
+    },
+    status: {
+        type: String,
+        enum: ["sent", "delivered", "read"],
+        default: "sent",
     }
 },
 {timestamps: true}
 )
 
-const MessageModel = models.Messgae || model("Messgae", messageschema)
+const MessageModel = models.Message || model("Message", messageschema)
 
 export default MessageModel;
