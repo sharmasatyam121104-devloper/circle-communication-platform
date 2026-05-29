@@ -386,13 +386,13 @@ return (
             </div>
 
             <div className="flex gap-3 lg:gap-5 justify-center items-center">
-              <h1 className="text-3xl lg:text-4xl hover:text-green-400 active:scale-75 cursor-pointer">
+              <Link to={`/video-call/${openChatId}`} className="text-3xl lg:text-4xl hover:text-green-400 active:scale-75 cursor-pointer">
                 <MdOutlineVideoCall />
-              </h1>
+              </Link>
 
-              <h1 className="text-2xl lg:text-3xl hover:text-green-400 active:scale-75 cursor-pointer">
+              <Link to={`/audio-call/${openChatId}`} className="text-2xl lg:text-3xl hover:text-green-400 active:scale-75 cursor-pointer">
                 <IoCallOutline />
-              </h1>
+              </Link>
             </div>
           </div>
 

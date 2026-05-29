@@ -8,6 +8,8 @@ import useAuthStore from "./store/useAuthStore"
 import { useEffect } from "react"
 import PublicRoute from "./routes/PublicRoute"
 import UpdateImage from "./pages/UpdateImage"
+import AudioCall from "./pages/AudioCall"
+import VideoCall from "./pages/VideoCall"
 
 
 
@@ -30,9 +32,9 @@ const App = () => {
         <Route element={<ProtectedRoute />}>
           <Route path="/chat" element={<Chat />} />
           <Route path="/chat/:id" element={<Chat />} />
+          <Route path="/audio-call/:id" element={<AudioCall />} />
+          <Route path="/video-call/:id" element={<VideoCall/>} />
           <Route path="/update-img" element={<UpdateImage />} />
-          {/* <Route path="/profile" element={<Profile />} />
-          <Route path="/settings" element={<Settings />} /> */}
         </Route>
     </Routes>
     </div>
