@@ -137,6 +137,7 @@ export  const getMessagesByChatId = async(req: SessionInterface, res: Response)=
     try {
         const id = req.id;
         const chatId = req.params.chatId;
+        const { limit = 20, before } = req.query;
 
         if(!chatId){
             throw tryError("Chat id is required.", 400)
@@ -156,9 +157,18 @@ export  const getMessagesByChatId = async(req: SessionInterface, res: Response)=
             throw tryError("You are not a valid user to access this chat", 401)
         }
 
-        const chatMesssages = await MessageModel.find({chat: chat._id})
+        const query: any = { chat: chat._id };
 
-        return res.status(200).json({message: "All messages fetched successfully.", chatMesssages})
+        // cursor pagination
+        if (before) {
+            query._id = { $lt: before }; // older messages
+        }
+
+        const chatMessages = await MessageModel.find(query)
+        .sort({ createdAt: -1 }) // latest first
+        .limit(Number(limit));
+
+        return res.status(200).json({message: "All messages fetched successfully.", chatMessages})
         
     } 
     catch (error) {

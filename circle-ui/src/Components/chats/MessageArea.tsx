@@ -46,11 +46,30 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat}: MessageAreaPr
 
     const bottomRef = useRef<HTMLDivElement | null>(null)
 
+    const limit = 20;
+
+    // scroll bottom
     const scrollToBottom = () => {
-        bottomRef.current?.scrollIntoView({
-            behavior: "smooth"
-        })
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" })
     }
+
+
+// const divRef = useRef<HTMLDivElement | null>(null);
+
+//   useEffect(() => {
+//     const div = divRef.current;
+//     if (!div) return;
+
+//     const handleScroll = () => {
+//       console.log(div.scrollTop);
+//     };
+
+//     div.addEventListener("scroll", handleScroll);
+
+//     return () => {
+//       div.removeEventListener("scroll", handleScroll);
+//     };
+//   }, []);
 
     useEffect(() => {
         scrollToBottom()
@@ -62,14 +81,13 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat}: MessageAreaPr
                 if(!openChatId) return;
 
                 setAllMessgaeOfChatLoading(true)
-                const {data} = await api.get(`/message/${openChatId}`)
-                setAllMessgaeOfChat((prev) => {
-                    const newMsgs = data.chatMesssages;
+                const { data } = await api.get(
+                `/message/${openChatId}?limit=${limit}`
+                )
 
-                    if (!prev) return newMsgs;
-
-                    return newMsgs;
-                });
+                setAllMessgaeOfChat(
+                data.chatMessages.reverse() // old -> new order
+                )
             } 
             catch (error) {
                 clientCatchError(error)
@@ -107,7 +125,7 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat}: MessageAreaPr
     }
    
     return (
-        <div className="lg:h-140 h-[80vh] overflow-y-auto">
+        <div className="lg:h-140 h-[80vh] overflow-y-auto" >
             {
                 allMessageOfChat?.map((item: MessageInterface)=>{
                     return (
