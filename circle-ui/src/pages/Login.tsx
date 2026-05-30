@@ -24,7 +24,6 @@ const Login = () => {
     e.preventDefault();
     try {
         setLoading(true)
-        console.log(formData);
         await api.post("/user/login", formData)
         getMe()
         toast.success("Login success.")

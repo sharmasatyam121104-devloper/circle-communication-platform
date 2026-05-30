@@ -19,6 +19,7 @@ import MessageArea from "../Components/chats/MessageArea"
 import LogoutComponents from "../Components/page-components/LogoutComponents"
 import ChatAttachment from "../Components/chats/ChatAttachment"
 import UploadProgressBar from "../Components/ui/UploadProgressBar"
+import socket from "../lib/socketClient"
 
 interface LastMessageInterface {
   _id: string;
@@ -63,7 +64,7 @@ const server = import.meta.env.VITE_SERVER;
 const Chat = () => {
   const navigate = useNavigate();
   const location = useLocation()
-  const { id } = useParams();
+  const { userId: id } = useParams();
   const isChatOpen = Boolean(id); 
 
   
@@ -88,6 +89,8 @@ const Chat = () => {
 
   const [newLastMessage, setNewLastmessage] = useState<string | null>(null)
 
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([])
+
 
 
   useEffect(()=>{
@@ -109,7 +112,7 @@ const Chat = () => {
   },[isAddMemberInChatModalOpen])
 
   useEffect(()=>{
-    if (!allChats || !openUserId) return;
+    if (!allChats || !openUserId ) return;
 
     allChats.forEach((items: ChatInterface) => {
 
@@ -117,9 +120,10 @@ const Chat = () => {
         (participant: ParticipantInterface) =>
           participant._id !== user?.data?._id
       );
-
+      
       if (otherParticipant?._id === openUserId) {
         setOpenChatUser(otherParticipant);
+        setOpenChatId(items._id)
       }
     });
 
@@ -176,6 +180,20 @@ const Chat = () => {
     }
   };
 
+  useEffect(() => {
+    socket.connect();
+    socket.on("online-users", (users) => {
+      setOnlineUsers(users)
+    });
+
+    return () => {
+      socket.disconnect();
+      socket.off("online-users");
+    };
+  }, []);
+
+
+  console.log("onlineUsers", onlineUsers)
 
   if(allChatsLoading){
     return (
@@ -299,7 +317,7 @@ return (
                     : (items.lastMessage?.text || "No messages yet")
                 }
                 avatar={`${server}${otherParticipant?.profile_picture_url}`}
-                isOnline={true}
+                isOnline={onlineUsers.includes(otherParticipant?._id || "")}
                 onClick={() => {
                   navigate(`/chat/${otherParticipant?._id}`);
                   setOpenChatId(items._id);

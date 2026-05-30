@@ -8,13 +8,12 @@ import {
   ScreenShare,
   ArrowLeft,
 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link} from "react-router-dom";
 
 const VideoCall = () => {
   const [muted, setMuted] = useState(false);
   const [videoOff, setVideoOff] = useState(false);
   const [screenShare, setScreenShare] = useState(false);
-  const location = useLocation();
 
 
 
@@ -25,7 +24,7 @@ const VideoCall = () => {
       <div className="h-14 flex items-center justify-between px-4 border-b border-gray-200 bg-gray-300 backdrop-blur-md">
 
         <Link
-          to={`/chat/${location.pathname.split("/").pop()}`}
+          to={`/chat`}
           className="p-2 rounded-full hover:bg-gray-100 transition"
         >
           <ArrowLeft size={18} />

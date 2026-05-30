@@ -1,6 +1,9 @@
 import express, { urlencoded } from "express";
 const app = express();
 
+import { createServer } from "node:http";
+const server = createServer(app)
+
 
 
 import cors from "cors";
@@ -36,4 +39,4 @@ app.get("/test", (req, res) => {
   res.send("Server Running...");
 });
 
-export default app;
+export default server;

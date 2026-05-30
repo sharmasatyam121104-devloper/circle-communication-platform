@@ -18,7 +18,7 @@ const App = () => {
 
   useEffect(() => {
     getMe();
-  }, []);
+  }, [getMe]);
 
   return (
     <div>
@@ -31,7 +31,7 @@ const App = () => {
 
         <Route element={<ProtectedRoute />}>
           <Route path="/chat" element={<Chat />} />
-          <Route path="/chat/:id" element={<Chat />} />
+          <Route path="/chat/:userId" element={<Chat />} />
           <Route path="/audio-call/:id" element={<AudioCall />} />
           <Route path="/video-call/:id" element={<VideoCall/>} />
           <Route path="/update-img" element={<UpdateImage />} />
