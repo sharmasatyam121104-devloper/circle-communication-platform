@@ -91,6 +91,8 @@ const Chat = () => {
 
   const [onlineUsers, setOnlineUsers] = useState<string[]>([])
 
+  const [joinChat, setJoinChat] = useState(false)
+
 
 
   useEffect(()=>{
@@ -166,7 +168,10 @@ const Chat = () => {
         }
       );
 
-      setAddMessageInChat(data.data);
+      // setAddMessageInChat(data.data);
+      if(joinChat){
+        socket.emit("send-message", data.data)
+      }
     }
      catch (error) {
       setUploadProgress(0);
@@ -191,9 +196,7 @@ const Chat = () => {
       socket.off("online-users");
     };
   }, []);
-
-
-  console.log("onlineUsers", onlineUsers)
+  
 
   if(allChatsLoading){
     return (
@@ -416,7 +419,7 @@ return (
 
           {/* Messages */}
           <div className="flex-1 overflow-hidden">
-            <MessageArea openChatId={openChatId} openChatUser={openChatUser} addMessageInChat={addMessageInChat}/>
+            <MessageArea openChatId={openChatId} openChatUser={openChatUser} addMessageInChat={addMessageInChat} joinChat={joinChat} setJoinChat={setJoinChat}/>
           </div>
 
           {/* Input */}

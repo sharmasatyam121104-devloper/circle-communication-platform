@@ -5,6 +5,7 @@ import clientCatchError from "../../lib/clientCatchError"
 import api from "../../lib/api"
 import useAuthStore from "../../store/useAuthStore"
 import Loader from "../ui/Loder"
+import socket from "../../lib/socketClient"
 
 interface ParticipantInterface {
   _id: string;
@@ -17,6 +18,8 @@ type MessageAreaProps = {
     openChatId: string;
     openChatUser: ParticipantInterface | null
     addMessageInChat: MessageInterface | null 
+    joinChat: boolean
+    setJoinChat: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 interface AttachmentInterface {
@@ -37,9 +40,9 @@ export interface MessageInterface {
 
 const server = import.meta.env.VITE_SERVER;
 
-const MessageArea = ({openChatId, openChatUser, addMessageInChat}: MessageAreaProps) => {
+const MessageArea = ({openChatId, openChatUser, addMessageInChat, joinChat, setJoinChat}: MessageAreaProps) => {
 
-    const [allMessageOfChat, setAllMessgaeOfChat] = useState<MessageInterface[] | null>(null)
+    const [allMessageOfChat, setAllMessgaeOfChat] = useState<MessageInterface[]>([])
     const [allMessageOfChatLoading, setAllMessgaeOfChatLoading] = useState(false)
 
     const user = useAuthStore((state)=>state.user)
@@ -53,23 +56,19 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat}: MessageAreaPr
         bottomRef.current?.scrollIntoView({ behavior: "smooth" })
     }
 
+    useEffect(() => {
+        if (!joinChat) return;
 
-// const divRef = useRef<HTMLDivElement | null>(null);
+        const handler = (data:MessageInterface) => {
+            setAllMessgaeOfChat((prev) => [...prev, data]);
+        };
 
-//   useEffect(() => {
-//     const div = divRef.current;
-//     if (!div) return;
+        socket.on("recive-message", handler);
 
-//     const handleScroll = () => {
-//       console.log(div.scrollTop);
-//     };
-
-//     div.addEventListener("scroll", handleScroll);
-
-//     return () => {
-//       div.removeEventListener("scroll", handleScroll);
-//     };
-//   }, []);
+        return () => {
+            socket.off("recive-message", handler);
+        };
+    }, [joinChat]);
 
     useEffect(() => {
         scrollToBottom()
@@ -84,10 +83,7 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat}: MessageAreaPr
                 const { data } = await api.get(
                 `/message/${openChatId}?limit=${limit}`
                 )
-
-                setAllMessgaeOfChat(
-                data.chatMessages.reverse() // old -> new order
-                )
+                setAllMessgaeOfChat(data.chatMessages.reverse())
             } 
             catch (error) {
                 clientCatchError(error)
@@ -116,6 +112,46 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat}: MessageAreaPr
 
     }, [addMessageInChat]);
 
+    
+
+
+    // useEffect for stablised connecopn
+    useEffect(() => {
+        socket.connect();
+
+        socket.on("connect", () => {
+            if (openChatId) {
+                socket.emit("join-chat", openChatId);
+            }
+        });
+
+        return () => {
+            socket.off("connect");
+            socket.disconnect();
+            setJoinChat(false)
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!openChatId) return;
+
+        const join = () => {
+            socket.emit("join-chat", openChatId);
+            setJoinChat(true)
+        }
+
+        if (socket.connected) {
+            join();
+        } else {
+            socket.once("connect", join);
+        }
+
+        return () => {
+            socket.emit("leave-chat", openChatId);
+            setJoinChat(false)
+        };
+    }, [openChatId]);
+
     if(allMessageOfChatLoading){
         return (
             <div className="flex justify-center items-center h-full w-full">
@@ -127,9 +163,9 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat}: MessageAreaPr
     return (
         <div className="lg:h-140 h-[80vh] overflow-y-auto" >
             {
-                allMessageOfChat?.map((item: MessageInterface)=>{
+                allMessageOfChat?.map((item: MessageInterface, index: number)=>{
                     return (
-                        <div key={item.updatedAt}>
+                        <div key={index}>
                             {
                                 item.sender === user?.data._id ? 
                                 <ReceiverMessage

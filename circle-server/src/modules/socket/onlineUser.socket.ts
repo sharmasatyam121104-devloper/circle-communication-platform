@@ -43,7 +43,8 @@ const OnlineUserSocket = (io: Server) => {
                 socket.disconnect();
             }
         });
-    } catch (error) {
+    } 
+    catch (error) {
         console.error("Socket Registration Error:", error);
     }
 };
