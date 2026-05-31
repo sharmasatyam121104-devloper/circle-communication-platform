@@ -13,14 +13,14 @@ type AttachmentProps = {
 type ReceiverMessageProps = {
   message?: string;
   time: string;
-  isSeen?: boolean;
+  status?: "sent" | "delivered" | "read";
   attachment?: AttachmentProps;
 };
 
 const ReceiverMessage = ({
   message,
   time,
-  isSeen = false,
+  status = "sent",
   attachment,
 }: ReceiverMessageProps) => {
   return (
@@ -84,11 +84,19 @@ const ReceiverMessage = ({
             </p>
 
             {/* Tick */}
-            {isSeen ? (
-              <IoCheckmarkDoneSharp className="text-blue-400 text-sm" />
-            ) : (
-              <IoMdCheckmark className="text-slate-300 text-sm" />
-            )}
+            <div>
+              {status === "sent" && (
+                <IoMdCheckmark className="text-slate-300 text-sm" />
+              )}
+
+              {status === "delivered" && (
+                <IoCheckmarkDoneSharp className="text-slate-300 text-sm" />
+              )}
+
+              {status === "read" && (
+                <IoCheckmarkDoneSharp className="text-blue-400 text-sm" />
+              )}
+            </div>
           </div>
         </div>
       </div>

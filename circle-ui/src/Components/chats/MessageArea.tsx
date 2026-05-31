@@ -30,6 +30,7 @@ interface AttachmentInterface {
 }
 
 export interface MessageInterface {
+    _id: string;
     chat: string;
     sender: string;
     text: string;
@@ -51,24 +52,70 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat, joinChat, setJ
 
     const limit = 20;
 
-    // scroll bottom
     const scrollToBottom = () => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" })
     }
 
-    useEffect(() => {
-        if (!joinChat) return;
+useEffect(() => {
+    if (!joinChat) return;
 
-        const handler = (data:MessageInterface) => {
-            setAllMessgaeOfChat((prev) => [...prev, data]);
+    const handler = (data: MessageInterface) => {
+        setAllMessgaeOfChat((prev) => [...prev, data]);
+
+        if (data.sender !== user?.data._id) {
+            socket.emit("message-delivered", {
+                messageId: data._id,
+                chatId: data.chat
+            });
+        }
+    };
+
+    socket.on("recive-message", handler);
+
+    return () => {
+        socket.off("recive-message", handler);
+    };
+}, [joinChat, user?.data._id]);
+
+    useEffect(() => {
+        const handleStatusUpdate = (updatedMessage: MessageInterface) => {
+            setAllMessgaeOfChat((prev) =>
+                prev.map((msg) =>
+                    msg._id === updatedMessage._id
+                        ? updatedMessage
+                        : msg
+                )
+            );
         };
 
-        socket.on("recive-message", handler);
+        socket.on("message-status-update", handleStatusUpdate);
 
         return () => {
-            socket.off("recive-message", handler);
+            socket.off("message-status-update", handleStatusUpdate);
         };
-    }, [joinChat]);
+    }, []);
+
+    useEffect(() => {
+        const handleMessagesRead = ({ chatId }: { chatId: string }) => {
+            console.log(chatId);
+            if (chatId !== openChatId) return;
+            if(!openChatId) return;
+
+            setAllMessgaeOfChat((prev) =>
+                prev.map((msg) =>
+                    msg.sender === user?.data?._id
+                        ? { ...msg, status: "read" }
+                        : msg
+                )
+            );
+        };
+
+        socket.on("messages-read", handleMessagesRead);
+
+        return () => {
+            socket.off("messages-read", handleMessagesRead);
+        };
+    }, [openChatId, user]);
 
     useEffect(() => {
         scrollToBottom()
@@ -113,8 +160,6 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat, joinChat, setJ
     }, [addMessageInChat]);
 
     
-
-
     // useEffect for stablised connecopn
     useEffect(() => {
         socket.connect();
@@ -138,6 +183,10 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat, joinChat, setJ
         const join = () => {
             socket.emit("join-chat", openChatId);
             setJoinChat(true)
+
+            socket.emit("messages-read", {
+                chatId: openChatId
+            });
         }
 
         if (socket.connected) {
@@ -163,15 +212,15 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat, joinChat, setJ
     return (
         <div className="lg:h-140 h-[80vh] overflow-y-auto" >
             {
-                allMessageOfChat?.map((item: MessageInterface, index: number)=>{
+                allMessageOfChat?.map((item: MessageInterface)=>{
                     return (
-                        <div key={index}>
+                        <div key={item._id}>
                             {
                                 item.sender === user?.data._id ? 
                                 <ReceiverMessage
                                     message={item.text}
                                     time={new Date(item.updatedAt).toLocaleString()}
-                                    isSeen={true}
+                                    status={item.status}
                                     attachment={
                                         item.attachment
                                             ? {
