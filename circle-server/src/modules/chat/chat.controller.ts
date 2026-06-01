@@ -84,6 +84,11 @@ export const getChatById = async(req: SessionInterface, res: Response)=>{
         }
 
         const chat = await ChatModel.findById(chatId)
+        .populate({
+            path: "participants",
+            select: "fullname email profile_picture_url",
+        })
+        
         return res.json({data: chat})
     } 
     catch (error) {

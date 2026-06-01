@@ -52,6 +52,7 @@ interface ChatInterface {
 }
 
 export interface MessageInterface {
+    _id: string
     chat: string;
     sender: string;
     text: string;
@@ -152,7 +153,6 @@ const sendersData = useMemo(() => {
           socket.off("msg-notification", handler);
       };
   }, [openChatId, sendersData, user]);
-
 
 
   useEffect(()=>{

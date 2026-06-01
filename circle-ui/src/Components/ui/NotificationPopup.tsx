@@ -29,14 +29,25 @@ const NotificationPopup = ({
     }, [onClose]);
 
     useEffect(() => {
-    new Audio("/notification.mp3")
-        .play()
-        .catch(console.error);
+        const audio = new Audio("/notification.mp3");
 
-    const timer = setTimeout(onClose, 8000);
+        audio.play().catch(console.error);
 
-    return () => clearTimeout(timer);
-}, [onClose]);
+        const stopAudio = setTimeout(() => {
+            audio.pause();
+            audio.currentTime = 0;
+        }, 1000);
+
+        const timer = setTimeout(onClose, 4000);
+
+        return () => {
+            clearTimeout(stopAudio);
+            clearTimeout(timer);
+
+            audio.pause();
+            audio.currentTime = 0;
+        };
+    }, [onClose]);
 
     return (
         <div

@@ -1,4 +1,4 @@
-import {  useState } from "react";
+import {  useEffect, useState } from "react";
 import {
   Mic,
   MicOff,
@@ -8,13 +8,62 @@ import {
   ScreenShare,
   ArrowLeft,
 } from "lucide-react";
-import { Link} from "react-router-dom";
+import { Link, useLocation} from "react-router-dom";
+import useAuthStore from "../store/useAuthStore";
+import api from "../lib/api";
+import ErrorPage from "../Components/page-components/ErrorPage";
+
+
+interface ParticipantInterface {
+  _id: string;
+  fullname: string;
+  email: string;
+  profile_picture_url: string;
+}
+
+interface ChatInterface {
+  _id: string;
+  participants: ParticipantInterface[];
+}
+
+const server = import.meta.env.VITE_SERVER;
 
 const VideoCall = () => {
-  const [muted, setMuted] = useState(false);
-  const [videoOff, setVideoOff] = useState(false);
-  const [screenShare, setScreenShare] = useState(false);
+  const [micOn, setmicOn] = useState(true);
+  const [videoOn, setvideoOn] = useState(true);
+  const [screenShareOn, setscreenShareOn] = useState(false);
+  
+  const [chatData, setChatData] = useState<ChatInterface | null>(null)
+  const [chatDataError, setChatDataError] = useState<Error | null>(null)
+  const user = useAuthStore((state)=>state.user)
+  const remoteUser = chatData?.participants.find((participant) => participant._id !== user?.data._id);
 
+
+  const location = useLocation()
+  const chatId = location.pathname.split('/').pop()
+
+  //Fetch chat data from chatId 
+  useEffect(()=>{
+    const fetchChatData = async()=>{
+      try {
+        const {data} = await api.get(`/chat/${chatId}`)
+        setChatData(data.data)
+        setChatDataError(null)
+      }
+      catch (error) {
+        if(error instanceof Error){
+          setChatDataError(error)
+        }
+      }
+    }
+
+    fetchChatData()
+  },[])
+
+
+  if(chatDataError){
+    return <ErrorPage message={chatDataError.message}/>
+  }
 
 
   return (
@@ -31,8 +80,8 @@ const VideoCall = () => {
         </Link>
 
         <div className="text-center">
-          <h1 className="text-sm font-semibold text-slate-800">
-            Aarav Sharma
+          <h1 className="text-sm font-semibold text-slate-800 capitalize">
+            {remoteUser?.fullname}
           </h1>
             <p className="text-xs text-gray-500">{"00.00.00"}</p>
         </div>
@@ -52,23 +101,39 @@ const VideoCall = () => {
           "
         >
 
-          {/* Remote */}
-          <div className="flex-1 rounded-2xl bg-gray-400 border border-gray-200 shadow-sm flex items-center justify-center relative">
+          {/* Remote video section */}
+          <div className="flex-1 rounded-2xl bg-gray-400 border border-gray-200 shadow-sm flex flex-col items-center justify-center relative gap-3">
 
-            <p className="text-gray-500 text-sm">Remote User</p>
+            <img
+              src={`${server}${remoteUser?.profile_picture_url}`}
+              alt={remoteUser?.fullname}
+              className="w-24 h-24 rounded-full object-cover border-4 border-white"
+            />
 
-            <span className="absolute bottom-2 left-2 text-xs px-2 py-1 rounded bg-gray-800 text-white">
-              Aarav
+            <p className="text-white text-lg font-medium capitalize">
+              {remoteUser?.fullname}
+            </p>
+
+            <span className="absolute bottom-2 left-2 text-xs px-2 py-1 rounded bg-gray-800 text-white capitalize">
+              {remoteUser?.fullname}
             </span>
           </div>
 
-          {/* Local */}
-          <div className="flex-1 rounded-2xl bg-gray-400 border border-gray-200 shadow-sm flex items-center justify-center relative">
+          {/* Local video section */}
+          <div className="flex-1 rounded-2xl bg-gray-400 border border-gray-200 shadow-sm flex flex-col items-center justify-center relative gap-3">
 
-            <p className="text-gray-500 text-sm">You</p>
+            <img
+              src={`${server}${user?.data?.profile_picture_url}`}
+              alt={user?.data.fullname}
+              className="w-24 h-24 rounded-full object-cover border-4 border-white"
+            />
 
-            <span className="absolute bottom-2 left-2 text-xs px-2 py-1 rounded bg-indigo-400 text-white">
-              You
+            <p className="text-white text-lg font-medium capitalize">
+              {user?.data.fullname} (You)
+            </p>
+
+            <span className="absolute bottom-2 left-2 text-xs px-2 py-1 rounded bg-indigo-400 text-white capitalize">
+              {user?.data.fullname} (You)
             </span>
           </div>
         </div>
@@ -79,34 +144,34 @@ const VideoCall = () => {
 
           {/* Mute */}
           <button
-            onClick={() => setMuted((p) => !p)}
+            onClick={() => setmicOn((p) => !p)}
             className={`p-3 rounded-full transition active:scale-75 ${
-              muted
-                ? "bg-red-100 text-red-600"
-                : "bg-gray-100 text-gray-700"
+              micOn
+                ? "bg-red-100 text-green-600"
+                : "bg-gray-100 text-red-700"
             }`}
           >
-            {muted ? <MicOff size={20} /> : <Mic size={20} />}
+            {micOn ? <Mic size={20} /> : <MicOff size={20} />}
           </button>
 
           {/* Video */}
           <button
-            onClick={() => setVideoOff((p) => !p)}
+            onClick={() => setvideoOn((p) => !p)}
             className={`p-3 rounded-full transition active:scale-75 ${
-              videoOff
-                ? "bg-red-100 text-red-600"
-                : "bg-gray-100 text-gray-700"
+              videoOn
+                ? "bg-red-100 text-green-600"
+                : "bg-gray-100 text-red-700"
             }`}
           >
-            {videoOff ? <VideoOff size={20} /> : <Video size={20} />}
+            {videoOn ? <Video size={20} /> : <VideoOff size={20} />}
           </button>
 
           {/* Screen Share */}
           <button
-            onClick={() => setScreenShare((p) => !p)}
+            onClick={() => setscreenShareOn((p) => !p)}
             className={`p-3 rounded-full transition active:scale-75 ${
-              screenShare
-                ? "bg-indigo-100 text-indigo-600"
+              screenShareOn
+                ? "bg-indigo-400 text-indigo-800"
                 : "bg-gray-100 text-gray-700"
             }`}
           >
