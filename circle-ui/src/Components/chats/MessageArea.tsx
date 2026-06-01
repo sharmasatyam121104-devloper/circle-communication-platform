@@ -6,6 +6,8 @@ import api from "../../lib/api"
 import useAuthStore from "../../store/useAuthStore"
 import Loader from "../ui/Loder"
 import socket from "../../lib/socketClient"
+import NotificationPopup from "../ui/NotificationPopup"
+import { useNavigate } from "react-router-dom"
 
 interface ParticipantInterface {
   _id: string;
@@ -20,6 +22,7 @@ type MessageAreaProps = {
     addMessageInChat: MessageInterface | null 
     joinChat: boolean
     setJoinChat: React.Dispatch<React.SetStateAction<boolean>>
+    sendersData: ParticipantInterface[]
 }
 
 interface AttachmentInterface {
@@ -39,9 +42,18 @@ export interface MessageInterface {
     updatedAt: string
 }
 
+interface ParticipantInterface {
+  _id: string;
+  fullname: string;
+  email: string;
+  profile_picture_url: string;
+}
+
+
+
 const server = import.meta.env.VITE_SERVER;
 
-const MessageArea = ({openChatId, openChatUser, addMessageInChat, joinChat, setJoinChat}: MessageAreaProps) => {
+const MessageArea = ({openChatId, openChatUser, addMessageInChat, joinChat, setJoinChat, sendersData}: MessageAreaProps) => {
 
     const [allMessageOfChat, setAllMessgaeOfChat] = useState<MessageInterface[]>([])
     const [allMessageOfChatLoading, setAllMessgaeOfChatLoading] = useState(false)
@@ -52,30 +64,85 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat, joinChat, setJ
 
     const limit = 20;
 
+    const [notification, setNotification] = useState({
+        _id: "",
+        fullname: "",
+        email: "",
+        profile_picture_url: "",
+        message: "",
+        time: "",
+    });
+    const [showNotification, setShowNotification] = useState(false)
+    const navigate = useNavigate();
+
     const scrollToBottom = () => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" })
     }
 
 useEffect(() => {
-    if (!joinChat) return;
+    const handler = ({
+        senderId,
+        message,
+    }: {
+        senderId: string;
+        message: MessageInterface;
+    }) => {
 
-    const handler = (data: MessageInterface) => {
-        setAllMessgaeOfChat((prev) => [...prev, data]);
+        console.log("notification received");
 
-        if (data.sender !== user?.data._id) {
-            socket.emit("message-delivered", {
-                messageId: data._id,
-                chatId: data.chat
-            });
+        if (senderId === user?.data?._id) return;
+
+        if (message.chat === openChatId) {
+            console.log("same chat");
+            return;
         }
+
+        const matchingSender = sendersData.find(
+            (sender) => sender._id === senderId
+        );
+
+        setNotification({
+            _id: senderId,
+            fullname: matchingSender?.fullname || "New Message",
+            email: matchingSender?.email || "",
+            profile_picture_url:
+                matchingSender?.profile_picture_url || "",
+            message: message.text,
+            time: message.updatedAt,
+        });
+
+        setShowNotification(true);
     };
 
-    socket.on("recive-message", handler);
+    socket.on("msg-notification", handler);
 
     return () => {
-        socket.off("recive-message", handler);
+        socket.off("msg-notification", handler);
     };
-}, [joinChat, user?.data._id]);
+}, [openChatId, sendersData, user]);
+
+    useEffect(() => {
+        if (!joinChat) return;
+
+        const handler = (data: MessageInterface) => {
+            setAllMessgaeOfChat((prev) => [...prev, data]);
+
+            if (data.sender !== user?.data._id) {
+                socket.emit("message-delivered", {
+                    messageId: data._id,
+                    chatId: data.chat
+                });
+            }
+        };
+
+        socket.on("recive-message", handler);
+
+        return () => {
+            socket.off("recive-message", handler);
+        };
+    }, [joinChat, user?.data._id]);
+
+
 
     useEffect(() => {
         const handleStatusUpdate = (updatedMessage: MessageInterface) => {
@@ -95,9 +162,10 @@ useEffect(() => {
         };
     }, []);
 
+
+    
     useEffect(() => {
         const handleMessagesRead = ({ chatId }: { chatId: string }) => {
-            console.log(chatId);
             if (chatId !== openChatId) return;
             if(!openChatId) return;
 
@@ -117,9 +185,13 @@ useEffect(() => {
         };
     }, [openChatId, user]);
 
+
+
     useEffect(() => {
         scrollToBottom()
     }, [allMessageOfChat])
+
+
 
     useEffect(()=>{
         const getAllMessageOfChat = async()=>{
@@ -143,6 +215,8 @@ useEffect(() => {
         getAllMessageOfChat()
     },[openChatId])
 
+
+
     useEffect(() => {
 
         if (!addMessageInChat) return;
@@ -160,20 +234,18 @@ useEffect(() => {
     }, [addMessageInChat]);
 
     
-    // useEffect for stablised connecopn
     useEffect(() => {
-        socket.connect();
-
-        socket.on("connect", () => {
+        const handleConnect = () => {
             if (openChatId) {
-                socket.emit("join-chat", openChatId);
+            socket.emit("join-chat", openChatId);
             }
-        });
+        };
+
+        socket.on("connect", handleConnect);
 
         return () => {
-            socket.off("connect");
-            socket.disconnect();
-            setJoinChat(false)
+            socket.off("connect", handleConnect);
+            setJoinChat(false);
         };
     }, []);
 
@@ -210,6 +282,7 @@ useEffect(() => {
     }
    
     return (
+        
         <div className="lg:h-140 h-[80vh] overflow-y-auto" >
             {
                 allMessageOfChat?.map((item: MessageInterface)=>{
@@ -253,6 +326,26 @@ useEffect(() => {
                     )
                 })
             }
+            {
+                showNotification && (
+                <NotificationPopup
+                    name={notification.fullname}
+                    message={notification.message}
+                    time={notification.time}
+                    profileImage={`${server}${notification.profile_picture_url}`}
+                    onClick={() => {
+                        navigate(`/chat/${notification._id}`);
+                        setShowNotification(false);
+                    }}
+                    onClose={() => {
+                        setShowNotification(false);
+                    }}
+                    className="top-5 right-5"
+                />
+                )
+            }
+            
+
             <div ref={bottomRef}></div>
         </div>
     )

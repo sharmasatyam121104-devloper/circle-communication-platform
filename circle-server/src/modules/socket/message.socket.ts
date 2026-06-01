@@ -24,6 +24,7 @@ const MessageSocket = (io: Server)=>{
                 ) as { id: string };
 
                 socket.data.userId = decoded.id;
+                socket.join(socket.data.userId);
             try {
                 socket.on("join-chat", (chatId: string)=>{
                     socket.join(chatId)
@@ -33,8 +34,24 @@ const MessageSocket = (io: Server)=>{
                     socket.leave(chatId);
                 })
 
-                socket.on("send-message", (message: any)=>{
+                socket.on("send-message", async(message: any)=>{
                     io.to(message.chat).emit("recive-message", message);
+
+                    const chat = await ChatModel.findById(message.chat);
+
+                    if (!chat) return;
+
+                    const receiverId = chat.participants.find(
+                        (id: string) => id.toString() !== socket.data.userId
+                    );
+
+                    if (!receiverId) return;
+
+                    io.to(receiverId.toString()).emit("msg-notification", {
+                        senderId: socket.data.userId,
+                        message,
+                    });
+
                 })
 
                 socket.on("message-delivered", async ({ messageId, chatId }) => {

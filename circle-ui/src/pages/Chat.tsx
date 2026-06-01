@@ -9,7 +9,7 @@ import { MdOutlineVideoCall } from "react-icons/md"
 import ChatMemberCard from "../Components/chats/ChatMemberCard"
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
 import clientCatchError from "../lib/clientCatchError"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import api from "../lib/api"
 import useAuthStore from "../store/useAuthStore"
 import AddChatSidebarMembers from "../Components/chats/AddChatSidebarMembers"
@@ -92,6 +92,17 @@ const Chat = () => {
   const [onlineUsers, setOnlineUsers] = useState<string[]>([])
 
   const [joinChat, setJoinChat] = useState(false)
+
+
+
+const sendersData = useMemo(() => {
+  return allChats.flatMap((chat) => {
+    const found = chat.participants.find(
+      (participant) => participant._id !== user?.data?._id
+    );
+    return found ? [found] : [];
+  });
+}, [allChats, user]);
 
 
 
@@ -419,7 +430,7 @@ return (
 
           {/* Messages */}
           <div className="flex-1 overflow-hidden">
-            <MessageArea openChatId={openChatId} openChatUser={openChatUser} addMessageInChat={addMessageInChat} joinChat={joinChat} setJoinChat={setJoinChat}/>
+            <MessageArea openChatId={openChatId} openChatUser={openChatUser} addMessageInChat={addMessageInChat} joinChat={joinChat} setJoinChat={setJoinChat} sendersData={sendersData}/>
           </div>
 
           {/* Input */}
