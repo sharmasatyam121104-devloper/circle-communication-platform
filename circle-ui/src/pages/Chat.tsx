@@ -20,6 +20,7 @@ import LogoutComponents from "../Components/page-components/LogoutComponents"
 import ChatAttachment from "../Components/chats/ChatAttachment"
 import UploadProgressBar from "../Components/ui/UploadProgressBar"
 import socket from "../lib/socketClient"
+import NotificationPopup from "../Components/ui/NotificationPopup"
 
 interface LastMessageInterface {
   _id: string;
@@ -76,7 +77,7 @@ const Chat = () => {
   const [openChatId, setOpenChatId] = useState("")
 
   const [message, setMessage] = useState("")
-  const [addMessageInChat, setAddMessageInChat] = useState<MessageInterface | null>(null)
+  const [addMessageInChat] = useState<MessageInterface | null>(null)
   const [sendMessageLoading, setSendMessageLoading] = useState(false)
 
   const user = useAuthStore((state)=>state.user)
@@ -93,6 +94,17 @@ const Chat = () => {
 
   const [joinChat, setJoinChat] = useState(false)
 
+    const [notification, setNotification] = useState({
+        _id: "",
+        fullname: "",
+        email: "",
+        profile_picture_url: "",
+        message: "",
+        time: "",
+    });
+    const [showNotification, setShowNotification] = useState(false)
+   
+
 
 
 const sendersData = useMemo(() => {
@@ -103,6 +115,43 @@ const sendersData = useMemo(() => {
     return found ? [found] : [];
   });
 }, [allChats, user]);
+
+
+  useEffect(() => {
+      const handler = ({senderId,message,}: {senderId: string;message: MessageInterface;}) => {
+
+          console.log("notification received");
+
+          if (senderId === user?.data?._id) return;
+
+          if (message.chat === openChatId) {
+              console.log("same chat");
+              return;
+          }
+
+          const matchingSender = sendersData.find(
+              (sender) => sender._id === senderId
+          );
+
+          setNotification({
+              _id: senderId,
+              fullname: matchingSender?.fullname || "New Message",
+              email: matchingSender?.email || "",
+              profile_picture_url:
+                  matchingSender?.profile_picture_url || "",
+              message: message.text,
+              time: message.updatedAt,
+          });
+
+          setShowNotification(true);
+      };
+
+      socket.on("msg-notification", handler);
+
+      return () => {
+          socket.off("msg-notification", handler);
+      };
+  }, [openChatId, sendersData, user]);
 
 
 
@@ -523,6 +572,24 @@ return (
         </div>
       )}
     </div>
+                {
+                showNotification && (
+                <NotificationPopup
+                    name={notification.fullname}
+                    message={notification.message}
+                    time={notification.time}
+                    profileImage={`${server}${notification.profile_picture_url}`}
+                    onClick={() => {
+                        navigate(`/chat/${notification._id}`);
+                        setShowNotification(false);
+                    }}
+                    onClose={() => {
+                        setShowNotification(false);
+                    }}
+                    className="top-5 right-5"
+                />
+                )
+            }
 
     <AddChatSidebarMembers
       isAddMemberInChatModalOpen={isAddMemberInChatModalOpen}

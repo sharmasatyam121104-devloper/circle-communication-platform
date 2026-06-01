@@ -79,47 +79,41 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat, joinChat, setJ
         bottomRef.current?.scrollIntoView({ behavior: "smooth" })
     }
 
-useEffect(() => {
-    const handler = ({
-        senderId,
-        message,
-    }: {
-        senderId: string;
-        message: MessageInterface;
-    }) => {
+    useEffect(() => {
+        const handler = ({senderId,message,}: {senderId: string;message: MessageInterface;}) => {
 
-        console.log("notification received");
+            console.log("notification received");
 
-        if (senderId === user?.data?._id) return;
+            if (senderId === user?.data?._id) return;
 
-        if (message.chat === openChatId) {
-            console.log("same chat");
-            return;
-        }
+            if (message.chat === openChatId) {
+                console.log("same chat");
+                return;
+            }
 
-        const matchingSender = sendersData.find(
-            (sender) => sender._id === senderId
-        );
+            const matchingSender = sendersData.find(
+                (sender) => sender._id === senderId
+            );
 
-        setNotification({
-            _id: senderId,
-            fullname: matchingSender?.fullname || "New Message",
-            email: matchingSender?.email || "",
-            profile_picture_url:
-                matchingSender?.profile_picture_url || "",
-            message: message.text,
-            time: message.updatedAt,
-        });
+            setNotification({
+                _id: senderId,
+                fullname: matchingSender?.fullname || "New Message",
+                email: matchingSender?.email || "",
+                profile_picture_url:
+                    matchingSender?.profile_picture_url || "",
+                message: message.text,
+                time: message.updatedAt,
+            });
 
-        setShowNotification(true);
-    };
+            setShowNotification(true);
+        };
 
-    socket.on("msg-notification", handler);
+        socket.on("msg-notification", handler);
 
-    return () => {
-        socket.off("msg-notification", handler);
-    };
-}, [openChatId, sendersData, user]);
+        return () => {
+            socket.off("msg-notification", handler);
+        };
+    }, [openChatId, sendersData, user]);
 
     useEffect(() => {
         if (!joinChat) return;
