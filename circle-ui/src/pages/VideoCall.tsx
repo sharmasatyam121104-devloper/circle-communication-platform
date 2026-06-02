@@ -45,6 +45,7 @@ const VideoCall = () => {
 
   const location = useLocation()
   const chatId = location.pathname.split('/').pop()
+  const isMediaActive = VideoOn || micOn || screenShareOn;
 
 
   const toggleScreen = async()=>{
@@ -202,17 +203,27 @@ const VideoCall = () => {
 
           {/* Local video section */}
           <div className="flex-1 rounded-2xl bg-gray-400 border border-gray-200 shadow-sm flex flex-col items-center justify-center relative gap-3">
-
             <video
-              ref={localVideoRef}
-              autoPlay
-              playsInline
-              className="w-full h-full object-cover rounded-2xl"
-            />
+                ref={localVideoRef}
+                autoPlay
+                playsInline
+                className={`w-full h-full object-cover rounded-2xl ${
+                  isMediaActive ? "block" : "hidden"
+                }`}
+              />
 
-            <span className="absolute bottom-2 left-2 text-xs px-2 py-1 rounded bg-indigo-400 text-white capitalize">
-              {user?.data.fullname} (You)
-            </span>
+              {!isMediaActive && (
+                <div>
+                  <img
+                    src={`${server}${user?.data?.profile_picture_url}`}
+                    alt={user?.data?.fullname}
+                    className="w-24 h-24 rounded-full object-cover border-4 border-white"
+                  />
+                  <p className="text-white text-lg font-medium capitalize">
+                    {user?.data?.fullname}
+                  </p>
+                </div>
+              )}
           </div>
         </div>
       </div>
