@@ -13,6 +13,7 @@ import useAuthStore from "../store/useAuthStore";
 import api from "../lib/api";
 import ErrorPage from "../Components/page-components/ErrorPage";
 import clientCatchError from "../lib/clientCatchError";
+import { toast } from "sonner";
 
 
 interface ParticipantInterface {
@@ -29,6 +30,20 @@ interface ChatInterface {
 
 const server = import.meta.env.VITE_SERVER;
 
+const config = {
+  iceServers: [
+    {
+      urls: [
+        "stun:stun.l.google.com:19302",
+        "stun:stun1.l.google.com:19302",
+        "stun:stun2.l.google.com:19302",
+        "stun:stun3.l.google.com:19302",
+        "stun:stun4.l.google.com:19302",
+      ],
+    },
+  ],
+};
+
 const VideoCall = () => {
   const [micOn, setmicOn] = useState(false);
   const [VideoOn, setVideoOn] = useState(false);
@@ -36,6 +51,7 @@ const VideoCall = () => {
 
   const localVideoRef = useRef<HTMLVideoElement | null>(null)
   const localStreamRef = useRef<MediaStream | null>(null)
+  const webRtcRef = useRef<RTCPeerConnection | null>(null)
 
   const [chatData, setChatData] = useState<ChatInterface | null>(null)
   const [chatDataError, setChatDataError] = useState<Error | null>(null)
@@ -121,6 +137,65 @@ const VideoCall = () => {
     }
   }
 
+  const webRtcConnection = ()=>{
+    webRtcRef.current = new RTCPeerConnection(config)
+
+    const rtc = webRtcRef.current
+    const localStram = localStreamRef.current
+    if(!rtc){
+      return console.log("rtc not found");
+    }
+    if(!localStram){
+      return console.log("localStream not found");
+    }
+
+
+    rtc.onicecandidate = (e)=>{
+      console.log(e.candidate);
+    }
+
+    rtc.onconnectionstatechange = ()=>{
+      console.log(rtc.connectionState);
+    }
+
+    rtc.ontrack = ()=>{
+      console.log("something is comming fron other user sides");
+    }
+
+    localStram.getTracks().forEach((track)=>{
+      rtc.addTrack(track, localStram)
+    })
+
+  }
+
+  const startCall = async()=>{
+    try {
+      if(!VideoOn && !screenShareOn){
+        return toast.info("Please start your video or screen first to stsrt call.")
+      }
+
+      webRtcConnection()
+
+      const rtc = webRtcRef.current
+      if(!rtc) return console.log("rtc not found");
+
+      const offer = await rtc.createOffer()
+      await rtc.setLocalDescription(offer)
+    } 
+    catch (error) {
+      clientCatchError(error)
+    }
+  }
+
+
+  const endCall = async()=>{
+    try {
+      alert()
+    } 
+    catch (error) {
+      clientCatchError(error)
+    }
+  }
 
 
 
@@ -267,12 +342,17 @@ const VideoCall = () => {
             <ScreenShare size={20} />
           </button>
 
-          {/* Hangup */}
           <button
+            onClick={startCall}
             className="p-3 rounded-full bg-green-500 text-white hover:bg-green-600 transition active:scale-75"
           >
-            {/* <Phone size={20} className="rotate-135" /> */}
             <Phone size={20} className="" />
+          </button>
+          <button
+            onClick={endCall}
+            className="p-3 rounded-full bg-red-500 text-white hover:bg-red-600 transition active:scale-75"
+          >
+            <Phone size={20} className="rotate-135" />
           </button>
         </div>
     </div>
