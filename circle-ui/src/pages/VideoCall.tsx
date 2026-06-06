@@ -15,6 +15,7 @@ import ErrorPage from "../Components/page-components/ErrorPage";
 import clientCatchError from "../lib/clientCatchError";
 import { toast } from "sonner";
 import socket from "../lib/socketClient";
+import CallPopup from "../Components/ui/CallPopUp";
 
 
 interface ParticipantInterface {
@@ -63,6 +64,14 @@ const VideoCall = () => {
   const location = useLocation()
   const chatId = location.pathname.split('/').pop()
   const isMediaActive = VideoOn || micOn || screenShareOn;
+
+  const [callOpen, setCallOpen] = useState(false);
+  const [callType, setCallType] = useState<"audio" | "video">("video");
+  const [callDirection, setCallDirection] = useState<"incoming" | "outgoing">("incoming");
+  const [isCallNotificationOpen, setIsCallNotifiactionOpen] = useState(false)
+
+  const [callerName, setCallerName] = useState("");
+  const [receiverName, setReceiverName] = useState("");
 
 
   const toggleScreen = async()=>{
@@ -183,12 +192,25 @@ const VideoCall = () => {
       const offer = await rtc.createOffer()
       await rtc.setLocalDescription(offer)
       console.log("📡 emitting offer");
-      socket.emit("send-offer", {offer, roomId: chatId, to: remoteUser?._id})
+      socket.emit("send-offer", {offer, roomId: chatId, to: remoteUser?._id, callerName: user?.data.fullname})
+      startCallUI()
     } 
     catch (error) {
       clientCatchError(error)
     }
   }
+
+  const startCallUI = () => {
+    if (!remoteUser) {
+      toast.error("User not loaded yet");
+      return;
+    }
+    setIsCallNotifiactionOpen(true)
+    setReceiverName(remoteUser?.fullname || "");
+    setCallType("video");
+    setCallDirection("outgoing");
+    setCallOpen(true);
+  };
 
 
   const endCall = async()=>{
@@ -201,7 +223,11 @@ const VideoCall = () => {
   }
 
   const onAcceptOffer = (payload: any)=>{
-      console.log(payload);
+    console.log(payload);
+    setIsCallNotifiactionOpen(true)
+    setCallerName(payload.callerName);
+    setCallDirection("incoming");
+    setCallOpen(true);
   }
 
   //Event Listener
@@ -217,15 +243,15 @@ const VideoCall = () => {
 
 
   useEffect(() => {
-  if (!chatId) return;
+    if (!chatId) return;
 
-  socket.emit("join-room", chatId);
-  console.log("joined room:", chatId);
+    socket.emit("join-room", chatId);
+    console.log("joined room:", chatId);
 
-  return () => {
-    socket.emit("leave-room", chatId);
-  };
-}, [chatId]);
+    return () => {
+      socket.emit("leave-room", chatId);
+    };
+  }, [chatId]);
 
 
   //Fetch chat data from chatId 
@@ -384,6 +410,21 @@ const VideoCall = () => {
             <Phone size={20} className="rotate-135" />
           </button>
         </div>
+        {
+          isCallNotificationOpen &&
+          <div className="fixed inset-0 z-40 bg-black/40 pointer-events-auto">
+            <div className="relative z-50">
+              <CallPopup
+                onClose={()=>setIsCallNotifiactionOpen(false)}
+                open={callOpen}
+                callerName={callerName}
+                receiverName={receiverName}
+                type={callType}
+                direction={callDirection}
+              />
+            </div>
+          </div>
+        }
     </div>
   );
 };

@@ -31,12 +31,13 @@ const VideoCallSocket = (io: Server)=>{
             });
 
             
-            socket.on("send-offer", ({ offer, roomId, to }) => {
+            socket.on("send-offer", ({ offer, roomId, to, callerName }) => {
                 console.log("offer from:", socket.data.userId);
 
-                io.to(roomId).emit("accept-offer", {
+                socket.to(roomId).emit("accept-offer", {
                     offer,
                     from: socket.data.userId,
+                    callerName
                 });
             });
         })

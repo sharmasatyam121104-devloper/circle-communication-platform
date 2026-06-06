@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Phone, PhoneOff, Video, Mic } from "lucide-react";
+import { Phone, PhoneOff, Video, Mic, X } from "lucide-react";
 
 type CallType = "audio" | "video";
 
@@ -12,8 +12,9 @@ interface CallPopupProps {
 
   position?: "top-left" | "top-right" | "bottom-left" | "bottom-right" | "center";
 
-  onAccept: () => void;
-  onReject: () => void;
+  onAccept?: () => void;
+  onReject?: () => void;
+  onClose?: () => void;
 }
 
 const positionClasses = {
@@ -33,6 +34,7 @@ const CallPopup = ({
   position = "bottom-right",
   onAccept,
   onReject,
+  onClose,
 }: CallPopupProps) => {
   const ringRef = useRef<HTMLAudioElement | null>(null);
 
@@ -56,7 +58,7 @@ const CallPopup = ({
       className={`fixed z-50 ${positionClasses[position]} w-80`}
     >
       {/* Card */}
-      <div className="bg-white border border-gray-200 shadow-xl rounded-2xl p-4 animate-pulse">
+      <div className="bg-white border border-gray-200 shadow-xl rounded-2xl p-4 ">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-2">
@@ -75,18 +77,27 @@ const CallPopup = ({
           <span className="text-xs text-gray-400">
             {direction}
           </span>
+          {
+            direction === "incoming" &&
+            <button
+              onClick={onClose}
+              className="p-1 rounded-full hover:bg-gray-200"
+            >
+              <X size={18} />
+            </button>
+          }
         </div>
 
         {/* Info */}
         <div className="text-sm text-gray-700 mb-3">
           {direction === "incoming" ? (
             <>
-              <p className="font-medium">{callerName}</p>
+              <p className="font-medium capitalize">{callerName}</p>
               <p className="text-xs text-gray-500">is calling you...</p>
             </>
           ) : (
             <>
-              <p className="font-medium">Calling {receiverName}</p>
+              <p className="font-medium capitalize">Calling {receiverName}</p>
               <p className="text-xs text-gray-500">ringing...</p>
             </>
           )}
@@ -94,27 +105,39 @@ const CallPopup = ({
 
         {/* Ring animation */}
         <div className="flex justify-center mb-3">
-          <div className="w-3 h-3 bg-indigo-500 rounded-full animate-ping"></div>
+          <div className="w-3 h-3 bg-indigo-500 rounded-full "></div>
         </div>
 
         {/* Buttons */}
         <div className="flex justify-between gap-3">
 
-          <button
-            onClick={onReject}
-            className="flex-1 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg"
-          >
-            <PhoneOff size={16} />
-            Reject
-          </button>
+          {direction === "incoming" ? (
+            <>
+              <button
+                onClick={onReject}
+                className="flex-1 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg"
+              >
+                <PhoneOff size={16} />
+                Reject
+              </button>
 
-          <button
-            onClick={onAccept}
-            className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg"
-          >
-            <Phone size={16} />
-            Accept
-          </button>
+              <button
+                onClick={onAccept}
+                className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg"
+              >
+                <Phone size={16} />
+                Accept
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={onReject}
+              className="w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg"
+            >
+              <PhoneOff size={16} />
+              Cut Call
+            </button>
+          )}
 
         </div>
       </div>
