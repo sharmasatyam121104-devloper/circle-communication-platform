@@ -25,7 +25,7 @@ interface AuthStore {
 
 const useAuthStore = create<AuthStore>((set) => ({
     user: null,
-    loading: false,
+    loading: true,
     getMe: async () => {
         set({ loading: true,});
         try {

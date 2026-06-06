@@ -14,6 +14,7 @@ import api from "../lib/api";
 import ErrorPage from "../Components/page-components/ErrorPage";
 import clientCatchError from "../lib/clientCatchError";
 import { toast } from "sonner";
+import socket from "../lib/socketClient";
 
 
 interface ParticipantInterface {
@@ -98,7 +99,7 @@ const VideoCall = () => {
       if(!localVideo) return
 
       if(!VideoOn){
-        const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true})
+        const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: false})
 
         localVideo.srcObject = stream
         localStreamRef.current = stream
@@ -181,6 +182,8 @@ const VideoCall = () => {
 
       const offer = await rtc.createOffer()
       await rtc.setLocalDescription(offer)
+      console.log("📡 emitting offer");
+      socket.emit("send-offer", {offer, roomId: chatId, to: remoteUser?._id})
     } 
     catch (error) {
       clientCatchError(error)
@@ -197,6 +200,32 @@ const VideoCall = () => {
     }
   }
 
+  const onAcceptOffer = (payload: any)=>{
+      console.log(payload);
+  }
+
+  //Event Listener
+  useEffect(()=>{
+    // socket.connect();
+    socket.on("accept-offer", onAcceptOffer)
+
+    return ()=>{
+      // socket.disconnect();
+      socket.off("accept-offer", onAcceptOffer)
+    }
+  },[])
+
+
+  useEffect(() => {
+  if (!chatId) return;
+
+  socket.emit("join-room", chatId);
+  console.log("joined room:", chatId);
+
+  return () => {
+    socket.emit("leave-room", chatId);
+  };
+}, [chatId]);
 
 
   //Fetch chat data from chatId 

@@ -12,6 +12,7 @@ api.interceptors.response.use(
 
     if (
       error.response?.status === 401 &&
+      error.response?.data?.message === "Access token not found" &&
       !originalRequest._retry
     ) {
       originalRequest._retry = true;

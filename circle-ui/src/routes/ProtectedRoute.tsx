@@ -21,6 +21,7 @@ const ProtectedRoute = () => {
     }, []);
 
   const { user, loading } = useAuthStore();
+  
 
   if (loading) {
     return <Loader size="lg" />;

@@ -11,7 +11,7 @@ export const AuthMiddleware = async(req: SessionInterface, res: Response, next: 
         const token = req.cookies?.access_token;
 
         if (!token) {
-            throw tryError("Unauthorized: No token provided", 401);
+            throw tryError("Access token not found", 401);
         }
 
         const decoded = jwt.verify(token,  process.env.ACCESS_SECRET!) as { id: string };
