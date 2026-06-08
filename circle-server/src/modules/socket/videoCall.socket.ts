@@ -52,6 +52,10 @@ const VideoCallSocket = (io: Server)=>{
                     from: socket.data.userId
                 })
             })
+
+            socket.on("send-end-call", ({roomId})=>{
+                socket.to(roomId).emit("accept-end-call")
+            })
         })
     } 
     catch (error) {

@@ -117,6 +117,8 @@ const sendersData = useMemo(() => {
   });
 }, [allChats, user]);
 
+console.log(sendersData);
+
 
   useEffect(() => {
       const handler = ({senderId,message,}: {senderId: string;message: MessageInterface;}) => {
@@ -194,6 +196,7 @@ const sendersData = useMemo(() => {
 
   const sendMessage = async () => {
     try {
+      const isReceiverOnlineRead = !!openUserId && onlineUsers.includes(openUserId);
       setSendMessageLoading(true);
 
       const finalMessage = message.trim();
@@ -205,12 +208,15 @@ const sendersData = useMemo(() => {
       const formData = new FormData();
       formData.append("chatId", openChatId);
       formData.append("text", finalMessage || "file");
+      formData.append("status", isReceiverOnlineRead ? "delivered": "sent")
 
       if (attachment) {
         formData.append("attachment", attachment);
       }
 
       setNewLastmessage(finalMessage || "file")
+
+      
 
       const { data } = await api.post(
         "/message",

@@ -72,6 +72,7 @@ export  const sendMessage = async(req: SessionInterface, res: Response)=>{
         let attachment = null;
 
         const { chatId, text } = req.body;
+        const status = req.body.status || "sent"
 
         if(!chatId){
             throw tryError("Chat id is required.", 400)
@@ -120,7 +121,7 @@ export  const sendMessage = async(req: SessionInterface, res: Response)=>{
             };
         }
 
-        const message = await  MessageModel.create({chat: chatId, sender: id, text, attachment})
+        const message = await  MessageModel.create({chat: chatId, sender: id, text, attachment, status})
 
         chat.lastMessage = message._id;
         await chat.save();

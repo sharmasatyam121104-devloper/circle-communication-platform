@@ -16,6 +16,7 @@ import clientCatchError from "../lib/clientCatchError";
 import { toast } from "sonner";
 import socket from "../lib/socketClient";
 import CallPopup from "../Components/ui/CallPopUp";
+import { formatTime } from "../lib/time";
 
 
 interface ParticipantInterface {
@@ -70,6 +71,8 @@ const VideoCall = () => {
   const [micOn, setmicOn] = useState(false);
   const [VideoOn, setVideoOn] = useState(false);
   const [screenShareOn, setScreenShareOn] = useState(false);
+  const [timer, setTimer] = useState(0)
+  const [isRemoteStreamStart, setIsRemoteStreamStart] = useState(false)
 
   const localVideoRef = useRef<HTMLVideoElement | null>(null)
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null)
@@ -106,11 +109,12 @@ const VideoCall = () => {
       if(!localVideo) return
 
       if(!screenShareOn){
-        const stream = await navigator.mediaDevices.getDisplayMedia({video: true})
+        const stream = await navigator.mediaDevices.getDisplayMedia({video: true, audio: true})
       
         localVideo.srcObject = stream
         localStreamRef.current = stream
         setScreenShareOn(true)
+        setmicOn(true)
       }
       else{
         const localStream = localStreamRef.current
@@ -121,6 +125,7 @@ const VideoCall = () => {
         localVideo.srcObject = null
         localStreamRef.current = null
         setScreenShareOn(false)
+        setmicOn(false)
       }
     } 
     catch (error) {
@@ -206,6 +211,21 @@ const VideoCall = () => {
       if(!remoteStream) return console.log("remote stream not found");
 
       remoteVideo.srcObject = remoteStream
+
+      const videoTracks = remoteStream.getVideoTracks()[0]
+
+      if(videoTracks){
+        videoTracks.onmute = ()=>{
+          console.log(`video off remote side`);
+        }
+        videoTracks.onunmute = ()=>{
+          console.log(`video on remote side`);
+        }
+        videoTracks.onended = ()=>{
+          console.log(`video end`);
+        }
+      }
+      
     }
 
 
@@ -226,6 +246,7 @@ const VideoCall = () => {
       await rtc.setLocalDescription(offer)
       setVideoCallStatus("calling")
       startSenderCallUI()
+      setIsRemoteStreamStart(true)
       socket.emit("send-offer", {offer, roomId: chatId, to: remoteUser?._id, callerName: user?.data.fullname})
     } 
     catch (error) {
@@ -268,6 +289,7 @@ const VideoCall = () => {
 
       setVideoCallStatus("talking")
       setIsCallNotifiactionOpen(false)
+      setIsRemoteStreamStart(true)
 
     } 
     catch (error) {
@@ -277,10 +299,22 @@ const VideoCall = () => {
 
   const endCall = async()=>{
     try {
-      alert()
+      setVideoCallStatus("end")
+      setIsCallNotifiactionOpen(false)
+      socket.emit("send-end-call", {roomId: chatId})
     } 
     catch (error) {
       clientCatchError(error)
+    }
+  }
+
+  const onAcceptEndCall = async()=>{
+    try {
+      setVideoCallStatus("end")
+      setIsCallNotifiactionOpen(false)
+    } 
+    catch (error) {
+      return clientCatchError(error)  
     }
   }
 
@@ -321,15 +355,19 @@ const VideoCall = () => {
     }
   }
 
+
+
   useEffect(()=>{
     socket.on("accept-offer", onAcceptOffer)
     socket.on("accept-candidate", onAcceptCandidate)
     socket.on("accept-answer", onAcceptAnswer)
+    socket.on("accept-end-call", onAcceptEndCall)
 
     return ()=>{
       socket.off("accept-offer", onAcceptOffer)
       socket.off("accept-candidate", onAcceptCandidate)
       socket.off("accept-answer", onAcceptAnswer)
+      socket.on("accept-end-call", onAcceptEndCall)
     }
   },[])
 
@@ -345,6 +383,9 @@ const VideoCall = () => {
 
 
   useEffect(()=>{
+
+     let interval: ReturnType<typeof setInterval> | null = null;
+
     if(videoCallStatus === "pending"){
       return console.log("Call status is pending");
     }
@@ -353,7 +394,7 @@ const VideoCall = () => {
       audioRef.current = new Audio()
     }
 
-    if(videoCallStatus === "calling" || videoCallStatus === "incoming") {
+    if(videoCallStatus === "calling") {
       audioRef.current.pause()
       audioRef.current.src = "/call-ring.mp3"
       audioRef.current.currentTime = 0
@@ -361,10 +402,40 @@ const VideoCall = () => {
       audioRef.current.play()
     }
 
+    if(videoCallStatus === "incoming") {
+      audioRef.current.pause()
+      audioRef.current.src = "/start-ring.mp3"
+      audioRef.current.currentTime = 0
+      audioRef.current.load()
+      audioRef.current.play()
+    }
+
     if(videoCallStatus === "talking" ) {
       audioRef.current.pause()
-      audioRef.current.src = "/call-ring.mp3"
       audioRef.current.currentTime = 0
+      interval = setInterval(()=>{
+        setTimer(prev => prev+1)
+      },1000)
+    }
+
+
+    if(videoCallStatus === "end" ) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+      audioRef.current.src = "/call-end.mp3"
+      audioRef.current.load()
+      audioRef.current.play()
+    }
+
+    return()=>{
+      if(audioRef.current){
+        audioRef.current.pause()
+        audioRef.current.currentTime = 0
+        audioRef.current = null
+      }
+      if (interval) {
+        clearInterval(interval);
+      }
     }
   },[videoCallStatus])
 
@@ -410,79 +481,84 @@ const VideoCall = () => {
           <h1 className="text-sm font-semibold text-slate-800 capitalize">
             {remoteUser?.fullname}
           </h1>
-            <p className="text-xs text-gray-500">{"00.00.00"}</p>
+            <p className="text-xs text-gray-500">{formatTime(timer)}</p>
         </div>
 
         <div className="w-8" />
       </div>
 
       {/* VIDEO AREA */}
-      <div className="flex-1 p-3 flex flex-col ">
+      <div className="flex-1 p-3 flex flex-col min-h-0">
 
         {/* VIDEO GRID */}
         <div
           className="
             flex-1 
-            flex flex-col md:grid md:grid-cols-2 
+            grid grid-cols-1 md:grid-cols-2 
             gap-3
+            min-h-0
           "
         >
 
           {/* Remote video section */}
-          <div className="flex-1 rounded-2xl bg-gray-400 border border-gray-200 shadow-sm flex flex-col items-center justify-center relative gap-3">
-              <video
-                ref={remoteVideoRef}
-                autoPlay
-                playsInline
-                className={`w-full h-full object-cover rounded-2xl ${
-                  isMediaActive ? "block" : "hidden"
-                }`}
-              />
-              {
-                !isMediaActive && (
-                  <div>
-                    <img
-                      src={`${server}${remoteUser?.profile_picture_url}`}
-                      alt={remoteUser?.fullname}
-                      className="w-24 h-24 rounded-full object-cover border-4 border-white"
-                    />
+          <div className="relative bg-gray-900 border border-gray-700 shadow-sm rounded-2xl overflow-hidden flex items-center justify-center aspect-video">
 
-                    <p className="text-white text-lg font-medium capitalize">
-                      {remoteUser?.fullname}
-                    </p>
+            <video
+              ref={remoteVideoRef}
+              autoPlay
+              playsInline
+              className={`w-full h-full object-cover ${
+                isRemoteStreamStart ? "block" : "hidden"
+              }`}
+            />
 
-                    <span className="absolute bottom-2 left-2 text-xs px-2 py-1 rounded bg-gray-800 text-white capitalize">
-                      {remoteUser?.fullname}
-                    </span>
-                  </div>
-                )
-              }
+            {!isRemoteStreamStart && (
+              <div className="flex flex-col items-center justify-center gap-2">
+                <img
+                  src={`${server}${remoteUser?.profile_picture_url}`}
+                  alt={remoteUser?.fullname}
+                  className="w-24 h-24 rounded-full object-cover border-4 border-white"
+                />
+
+                <p className="text-white text-lg font-medium capitalize">
+                  {remoteUser?.fullname}
+                </p>
+
+                <span className="absolute bottom-2 left-2 text-xs px-2 py-1 rounded bg-black/70 text-white capitalize">
+                  {remoteUser?.fullname}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Local video section */}
-          <div className="flex-1 rounded-2xl bg-gray-400 border border-gray-200 shadow-sm flex flex-col items-center justify-center relative gap-3">
-            <video
-                ref={localVideoRef}
-                autoPlay
-                playsInline
-                className={`w-full h-full object-cover rounded-2xl ${
-                  isMediaActive ? "block" : "hidden"
-                }`}
-              />
+          <div className="relative bg-gray-900 border border-gray-700 shadow-sm rounded-2xl overflow-hidden flex items-center justify-center aspect-video">
 
-              {!isMediaActive && (
-                <div>
-                  <img
-                    src={`${server}${user?.data?.profile_picture_url}`}
-                    alt={user?.data?.fullname}
-                    className="w-24 h-24 rounded-full object-cover border-4 border-white"
-                  />
-                  <p className="text-white text-lg font-medium capitalize">
-                    {user?.data?.fullname}
-                  </p>
-                </div>
-              )}
+            <video
+              ref={localVideoRef}
+              autoPlay
+              playsInline
+              muted
+              className={`w-full h-full object-cover ${
+                isMediaActive ? "block" : "hidden"
+              }`}
+            />
+
+            {!isMediaActive && (
+              <div className="flex flex-col items-center justify-center gap-2">
+                <img
+                  src={`${server}${user?.data?.profile_picture_url}`}
+                  alt={user?.data?.fullname}
+                  className="w-24 h-24 rounded-full object-cover border-4 border-white"
+                />
+
+                <p className="text-white text-lg font-medium capitalize">
+                  {user?.data?.fullname}
+                </p>
+              </div>
+            )}
           </div>
+
         </div>
       </div>
 
@@ -525,18 +601,21 @@ const VideoCall = () => {
             <ScreenShare size={20} />
           </button>
 
-          <button
-            onClick={startCall}
-            className="p-3 rounded-full bg-green-500 text-white hover:bg-green-600 transition active:scale-75"
-          >
-            <Phone size={20} className="" />
-          </button>
-          {/* <button
-            onClick={endCall}
-            className="p-3 rounded-full bg-red-500 text-white hover:bg-red-600 transition active:scale-75"
-          >
-            <Phone size={20} className="rotate-135" />
-          </button> */}
+          {
+            videoCallStatus === "talking" ? 
+              <button
+                onClick={endCall}
+                className="p-3 rounded-full bg-red-500 text-white hover:bg-red-600 transition active:scale-75"
+              >
+                <Phone size={20} className="rotate-135" />
+              </button> :
+              <button
+                onClick={startCall}
+                className="p-3 rounded-full bg-green-500 text-white hover:bg-green-600 transition active:scale-75"
+              >
+                <Phone size={20} className="" />
+              </button>
+          }
         </div>
         {
           isCallNotificationOpen &&
