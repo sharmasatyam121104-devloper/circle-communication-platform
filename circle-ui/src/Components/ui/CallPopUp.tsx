@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react";
 import { Phone, PhoneOff, Video, Mic, X } from "lucide-react";
 
 type CallType = "audio" | "video";
@@ -36,20 +35,7 @@ const CallPopup = ({
   onReject,
   onClose,
 }: CallPopupProps) => {
-  const ringRef = useRef<HTMLAudioElement | null>(null);
 
-  useEffect(() => {
-    ringRef.current = new Audio("/ringtone.mp3");
-    ringRef.current.loop = true;
-  }, []);
-
-  useEffect(() => {
-    if (open && direction === "incoming") {
-      ringRef.current?.play().catch(() => {});
-    } else {
-      ringRef.current?.pause();
-    }
-  }, [open, direction]);
 
   if (!open) return null;
 
@@ -74,18 +60,20 @@ const CallPopup = ({
             </span>
           </div>
 
-          <span className="text-xs text-gray-400">
-            {direction}
-          </span>
-          {
-            direction === "incoming" &&
-            <button
-              onClick={onClose}
-              className="p-1 rounded-full hover:bg-gray-200"
-            >
-              <X size={18} />
-            </button>
-          }
+          <div className="flex gap-2 items-center">
+            <span className="text-xs text-gray-400">
+              {direction}
+            </span>
+            {
+              direction === "incoming" &&
+              <button
+                onClick={onClose}
+                className="p-1 rounded-full hover:bg-gray-200 active:scale-75"
+              >
+                <X size={18} />
+              </button>
+            }
+          </div>
         </div>
 
         {/* Info */}
@@ -115,7 +103,7 @@ const CallPopup = ({
             <>
               <button
                 onClick={onReject}
-                className="flex-1 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg"
+                className="flex-1 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg active:scale-75"
               >
                 <PhoneOff size={16} />
                 Reject
@@ -123,7 +111,7 @@ const CallPopup = ({
 
               <button
                 onClick={onAccept}
-                className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg"
+                className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg active:scale-75"
               >
                 <Phone size={16} />
                 Accept

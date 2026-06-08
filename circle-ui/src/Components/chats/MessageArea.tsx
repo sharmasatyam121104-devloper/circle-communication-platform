@@ -79,10 +79,10 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat, joinChat, setJ
         bottomRef.current?.scrollIntoView({ behavior: "smooth" })
     }
 
+
+    //for showing incoming messsages notification
     useEffect(() => {
         const handler = ({senderId,message,}: {senderId: string;message: MessageInterface;}) => {
-
-            console.log("notification received");
 
             if (senderId === user?.data?._id) return;
 
@@ -115,6 +115,8 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat, joinChat, setJ
         };
     }, [openChatId, sendersData, user]);
 
+
+    //for receiving msg
     useEffect(() => {
         if (!joinChat) return;
 
@@ -162,7 +164,6 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat, joinChat, setJ
         const handleMessagesRead = ({ chatId }: { chatId: string }) => {
             if (chatId !== openChatId) return;
             if(!openChatId) return;
-
             setAllMessgaeOfChat((prev) =>
                 prev.map((msg) =>
                     msg.sender === user?.data?._id
@@ -177,7 +178,7 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat, joinChat, setJ
         return () => {
             socket.off("messages-read", handleMessagesRead);
         };
-    }, [openChatId, user]);
+    }, [openChatId, addMessageInChat, user]);
 
 
 
@@ -243,29 +244,27 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat, joinChat, setJ
         };
     }, []);
 
-    useEffect(() => {
-        if (!openChatId) return;
+useEffect(() => {
+    if (!openChatId) return;
 
-        const join = () => {
-            socket.emit("join-chat", openChatId);
-            setJoinChat(true)
+    const emitRead = () => {
+        socket.emit("join-chat", openChatId);
 
-            socket.emit("messages-read", {
-                chatId: openChatId
-            });
-        }
+        socket.emit("messages-read", {
+            chatId: openChatId
+        });
 
-        if (socket.connected) {
-            join();
-        } else {
-            socket.once("connect", join);
-        }
+        setJoinChat(true);
+    };
 
-        return () => {
-            socket.emit("leave-chat", openChatId);
-            setJoinChat(false)
-        };
-    }, [openChatId]);
+    emitRead();
+
+    return () => {
+        socket.emit("leave-chat", openChatId);
+        setJoinChat(false);
+    };
+}, [openChatId]);
+    
 
     if(allMessageOfChatLoading){
         return (

@@ -127,7 +127,7 @@ const MessageSocket = (io: Server)=>{
                                 status: "read"
                             }
                         );
-                        
+
                         console.log("EMITTING messages-read", chatId);
 
                         io.to(chatId).emit("messages-read", {

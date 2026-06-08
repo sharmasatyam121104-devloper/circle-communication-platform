@@ -32,14 +32,28 @@ const VideoCallSocket = (io: Server)=>{
 
             
             socket.on("send-offer", ({ offer, roomId, to, callerName }) => {
-                console.log("offer from:", socket.data.userId);
-
                 socket.to(roomId).emit("accept-offer", {
                     offer,
                     from: socket.data.userId,
                     callerName
                 });
             });
+
+            socket.on("send-candidate", ({candidate, roomId})=>{
+                console.log("send-candidate hit -", candidate);
+                socket.to(roomId).emit("accept-candidate",{
+                    candidate,
+                    from: socket.data.userId, 
+                })              
+            });
+
+            socket.on("send-answer", ({answer, roomId})=>{
+                console.log("send-answer hit -", answer);
+                socket.to(roomId).emit("accept-answer",{
+                    answer,
+                    from: socket.data.userId
+                })
+            })
         })
     } 
     catch (error) {

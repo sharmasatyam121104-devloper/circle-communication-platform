@@ -30,6 +30,26 @@ interface ChatInterface {
   participants: ParticipantInterface[];
 }
 
+interface OfferPayloadInterface {
+  offer: RTCSessionDescriptionInit;
+  from: string;
+  callerName: string;
+}
+
+interface CandidatePayloadInterface {
+  candidate: RTCIceCandidateInit;
+  from: string;
+}
+
+interface AnswerPayloadInterface {
+  answer: RTCSessionDescriptionInit;
+  from: string;
+}
+
+
+
+type CallType = "pending" | "calling" | "incoming" | "talking" | "end"
+
 const server = import.meta.env.VITE_SERVER;
 
 const config = {
@@ -52,8 +72,10 @@ const VideoCall = () => {
   const [screenShareOn, setScreenShareOn] = useState(false);
 
   const localVideoRef = useRef<HTMLVideoElement | null>(null)
+  const remoteVideoRef = useRef<HTMLVideoElement | null>(null)
   const localStreamRef = useRef<MediaStream | null>(null)
   const webRtcRef = useRef<RTCPeerConnection | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const [chatData, setChatData] = useState<ChatInterface | null>(null)
   const [chatDataError, setChatDataError] = useState<Error | null>(null)
@@ -72,6 +94,10 @@ const VideoCall = () => {
 
   const [callerName, setCallerName] = useState("");
   const [receiverName, setReceiverName] = useState("");
+
+  const [videoCallStatus, setVideoCallStatus] = useState<CallType>("pending")
+
+  const [offerPayload, setOfferPayload] = useState<OfferPayloadInterface | null>(null)
 
 
   const toggleScreen = async()=>{
@@ -151,30 +177,37 @@ const VideoCall = () => {
     webRtcRef.current = new RTCPeerConnection(config)
 
     const rtc = webRtcRef.current
-    const localStram = localStreamRef.current
+    const localStream = localStreamRef.current
     if(!rtc){
       return console.log("rtc not found");
     }
-    if(!localStram){
+    if(!localStream){
       return console.log("localStream not found");
     }
 
-
+    localStream.getTracks().forEach((track)=>{
+      rtc.addTrack(track, localStream)
+    })
+    
     rtc.onicecandidate = (e)=>{
-      console.log(e.candidate);
+      if(e.candidate){
+        socket.emit("send-candidate", {candidate: e.candidate, roomId: chatId, to: remoteUser?._id})
+      }
     }
 
     rtc.onconnectionstatechange = ()=>{
       console.log(rtc.connectionState);
     }
 
-    rtc.ontrack = ()=>{
-      console.log("something is comming fron other user sides");
+    rtc.ontrack = (e)=>{
+      const remoteStream = e.streams[0]
+      const remoteVideo = remoteVideoRef.current
+      if(!remoteVideo) return console.log("remote video not found");
+      if(!remoteStream) return console.log("remote stream not found");
+
+      remoteVideo.srcObject = remoteStream
     }
 
-    localStram.getTracks().forEach((track)=>{
-      rtc.addTrack(track, localStram)
-    })
 
   }
 
@@ -191,16 +224,16 @@ const VideoCall = () => {
 
       const offer = await rtc.createOffer()
       await rtc.setLocalDescription(offer)
-      console.log("📡 emitting offer");
+      setVideoCallStatus("calling")
+      startSenderCallUI()
       socket.emit("send-offer", {offer, roomId: chatId, to: remoteUser?._id, callerName: user?.data.fullname})
-      startCallUI()
     } 
     catch (error) {
       clientCatchError(error)
     }
   }
 
-  const startCallUI = () => {
+  const startSenderCallUI = () => {
     if (!remoteUser) {
       toast.error("User not loaded yet");
       return;
@@ -213,6 +246,30 @@ const VideoCall = () => {
   };
 
 
+  const acceptCall = async()=>{
+    try {
+      webRtcConnection()
+      if(!offerPayload){
+        return console.log("offerPayload not found.");
+      }
+
+      if(!webRtcRef.current){
+        return console.log("webRtcRef.current not found in acceptCall.");
+      }
+
+      const offer = new RTCSessionDescription(offerPayload.offer)
+      await webRtcRef.current.setRemoteDescription(offer)
+
+      const answer = await webRtcRef.current.createAnswer()
+      await webRtcRef.current.setLocalDescription(answer)
+
+      socket.emit("send-answer", {answer, roomId: chatId})
+    } 
+    catch (error) {
+      return clientCatchError(error)  
+    }
+  }
+
   const endCall = async()=>{
     try {
       alert()
@@ -222,36 +279,83 @@ const VideoCall = () => {
     }
   }
 
-  const onAcceptOffer = (payload: any)=>{
-    console.log(payload);
+  const onAcceptOffer = (payload: OfferPayloadInterface)=>{
     setIsCallNotifiactionOpen(true)
     setCallerName(payload.callerName);
     setCallDirection("incoming");
     setCallOpen(true);
+    setVideoCallStatus("incoming")
+    setOfferPayload(payload)
   }
 
-  //Event Listener
+  const onAcceptCandidate = async(payload: CandidatePayloadInterface)=>{
+    try {
+      if(!webRtcRef.current){
+        return
+      }
+      const candidate = new RTCIceCandidate(payload.candidate)
+      await webRtcRef.current.addIceCandidate(candidate)
+      console.log("accept-candidate", payload);
+    } 
+    catch (error) {
+      return clientCatchError(error)
+    }
+  }
+
+  const onAcceptAnswer = async(payload: AnswerPayloadInterface)=>{
+    try {
+        if(!webRtcRef.current){
+          return
+        }
+      const answer = new RTCSessionDescription(payload.answer)
+      await webRtcRef.current.setRemoteDescription(answer)
+      console.log("accept-answer", payload);
+    } 
+    catch (error) {
+      return clientCatchError(error)  
+    }
+  }
+
   useEffect(()=>{
-    // socket.connect();
     socket.on("accept-offer", onAcceptOffer)
+    socket.on("accept-candidate", onAcceptCandidate)
+    socket.on("accept-answer", onAcceptAnswer)
 
     return ()=>{
-      // socket.disconnect();
       socket.off("accept-offer", onAcceptOffer)
+      socket.off("accept-candidate", onAcceptCandidate)
+      socket.off("accept-answer", onAcceptAnswer)
     }
   },[])
 
 
   useEffect(() => {
     if (!chatId) return;
-
     socket.emit("join-room", chatId);
-    console.log("joined room:", chatId);
 
     return () => {
       socket.emit("leave-room", chatId);
     };
   }, [chatId]);
+
+
+  useEffect(()=>{
+    if(videoCallStatus === "pending"){
+      return console.log("Call status is pending");
+    }
+
+    if(!audioRef.current){
+      audioRef.current = new Audio()
+    }
+
+    if(videoCallStatus === "calling" || videoCallStatus === "incoming") {
+      audioRef.current.pause()
+      audioRef.current.src = "/call-ring.mp3"
+      audioRef.current.currentTime = 0
+      audioRef.current.load()
+      audioRef.current.play()
+    }
+  },[videoCallStatus])
 
 
   //Fetch chat data from chatId 
@@ -270,7 +374,7 @@ const VideoCall = () => {
     }
 
     fetchChatData()
-  },[])
+  },[chatId])
 
 
   if(chatDataError){
@@ -315,20 +419,33 @@ const VideoCall = () => {
 
           {/* Remote video section */}
           <div className="flex-1 rounded-2xl bg-gray-400 border border-gray-200 shadow-sm flex flex-col items-center justify-center relative gap-3">
+              <video
+                ref={remoteVideoRef}
+                autoPlay
+                playsInline
+                className={`w-full h-full object-cover rounded-2xl ${
+                  isMediaActive ? "block" : "hidden"
+                }`}
+              />
+              {
+                !isMediaActive && (
+                  <div>
+                    <img
+                      src={`${server}${remoteUser?.profile_picture_url}`}
+                      alt={remoteUser?.fullname}
+                      className="w-24 h-24 rounded-full object-cover border-4 border-white"
+                    />
 
-            <img
-              src={`${server}${remoteUser?.profile_picture_url}`}
-              alt={remoteUser?.fullname}
-              className="w-24 h-24 rounded-full object-cover border-4 border-white"
-            />
+                    <p className="text-white text-lg font-medium capitalize">
+                      {remoteUser?.fullname}
+                    </p>
 
-            <p className="text-white text-lg font-medium capitalize">
-              {remoteUser?.fullname}
-            </p>
-
-            <span className="absolute bottom-2 left-2 text-xs px-2 py-1 rounded bg-gray-800 text-white capitalize">
-              {remoteUser?.fullname}
-            </span>
+                    <span className="absolute bottom-2 left-2 text-xs px-2 py-1 rounded bg-gray-800 text-white capitalize">
+                      {remoteUser?.fullname}
+                    </span>
+                  </div>
+                )
+              }
           </div>
 
           {/* Local video section */}
@@ -403,12 +520,12 @@ const VideoCall = () => {
           >
             <Phone size={20} className="" />
           </button>
-          <button
+          {/* <button
             onClick={endCall}
             className="p-3 rounded-full bg-red-500 text-white hover:bg-red-600 transition active:scale-75"
           >
             <Phone size={20} className="rotate-135" />
-          </button>
+          </button> */}
         </div>
         {
           isCallNotificationOpen &&
@@ -421,6 +538,8 @@ const VideoCall = () => {
                 receiverName={receiverName}
                 type={callType}
                 direction={callDirection}
+                onAccept={acceptCall}
+                onReject={endCall}
               />
             </div>
           </div>
