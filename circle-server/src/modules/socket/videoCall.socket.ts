@@ -40,7 +40,6 @@ const VideoCallSocket = (io: Server)=>{
             });
 
             socket.on("send-candidate", ({candidate, roomId})=>{
-                console.log("send-candidate hit -", candidate);
                 socket.to(roomId).emit("accept-candidate",{
                     candidate,
                     from: socket.data.userId, 
@@ -48,7 +47,6 @@ const VideoCallSocket = (io: Server)=>{
             });
 
             socket.on("send-answer", ({answer, roomId})=>{
-                console.log("send-answer hit -", answer);
                 socket.to(roomId).emit("accept-answer",{
                     answer,
                     from: socket.data.userId

@@ -134,7 +134,7 @@ const VideoCall = () => {
       if(!localVideo) return
 
       if(!VideoOn){
-        const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: false})
+        const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true})
 
         localVideo.srcObject = stream
         localStreamRef.current = stream
@@ -248,6 +248,7 @@ const VideoCall = () => {
 
   const acceptCall = async()=>{
     try {
+      await toggleVideo()
       webRtcConnection()
       if(!offerPayload){
         return console.log("offerPayload not found.");
@@ -264,6 +265,10 @@ const VideoCall = () => {
       await webRtcRef.current.setLocalDescription(answer)
 
       socket.emit("send-answer", {answer, roomId: chatId})
+
+      setVideoCallStatus("talking")
+      setIsCallNotifiactionOpen(false)
+
     } 
     catch (error) {
       return clientCatchError(error)  
@@ -295,7 +300,6 @@ const VideoCall = () => {
       }
       const candidate = new RTCIceCandidate(payload.candidate)
       await webRtcRef.current.addIceCandidate(candidate)
-      console.log("accept-candidate", payload);
     } 
     catch (error) {
       return clientCatchError(error)
@@ -309,7 +313,8 @@ const VideoCall = () => {
         }
       const answer = new RTCSessionDescription(payload.answer)
       await webRtcRef.current.setRemoteDescription(answer)
-      console.log("accept-answer", payload);
+      setVideoCallStatus("talking")
+      setIsCallNotifiactionOpen(false)
     } 
     catch (error) {
       return clientCatchError(error)  
@@ -354,6 +359,12 @@ const VideoCall = () => {
       audioRef.current.currentTime = 0
       audioRef.current.load()
       audioRef.current.play()
+    }
+
+    if(videoCallStatus === "talking" ) {
+      audioRef.current.pause()
+      audioRef.current.src = "/call-ring.mp3"
+      audioRef.current.currentTime = 0
     }
   },[videoCallStatus])
 
