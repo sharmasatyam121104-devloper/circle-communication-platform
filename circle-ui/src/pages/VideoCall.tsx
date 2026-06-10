@@ -17,6 +17,9 @@ import { toast } from "sonner";
 import socket from "../lib/socketClient";
 import CallPopup from "../Components/ui/CallPopUp";
 import { formatTime } from "../lib/time";
+import Modal from "../Components/ui/Modal";
+import Button from "../Components/ui/Button";
+import { BiLeftArrow } from "react-icons/bi";
 
 
 interface ParticipantInterface {
@@ -51,6 +54,8 @@ interface AnswerPayloadInterface {
 
 type CallType = "pending" | "calling" | "incoming" | "talking" | "end"
 
+// type AudioSrcType = "/call-ring.mp3" |  "/start-ring.mp3" |  "/call-end.mp3"
+
 const server = import.meta.env.VITE_SERVER;
 
 const config = {
@@ -68,6 +73,7 @@ const config = {
 };
 
 const VideoCall = () => {
+  const [openModal, setOpenModal] = useState(false)
   const [micOn, setmicOn] = useState(false);
   const [VideoOn, setVideoOn] = useState(false);
   const [screenShareOn, setScreenShareOn] = useState(false);
@@ -102,6 +108,29 @@ const VideoCall = () => {
 
   const [offerPayload, setOfferPayload] = useState<OfferPayloadInterface | null>(null)
 
+
+  // const stopAudio = ()=>{
+  //   if(!audioRef.current) return
+
+  //   const player = audioRef.current
+  //   player.pause()
+  //   player.currentTime = 0
+  // }
+
+  // const playAudio = (src: AudioSrcType, loop: boolean = false)=>{
+  //   stopAudio()
+
+  //   if(!audioRef.current){
+  //     audioRef.current = new Audio()
+  //   }
+
+  //   const player = audioRef.current
+  //   player.src = src
+  //   player.loop = loop
+  //   player.load()
+  //   player.play()
+
+  // }
 
   const toggleScreen = async()=>{
     try {
@@ -213,7 +242,7 @@ const VideoCall = () => {
       remoteVideo.srcObject = remoteStream
 
       const videoTracks = remoteStream.getVideoTracks()[0]
-
+      
       if(videoTracks){
         videoTracks.onmute = ()=>{
           console.log(`video off remote side`);
@@ -225,7 +254,6 @@ const VideoCall = () => {
           console.log(`video end`);
         }
       }
-      
     }
 
 
@@ -302,16 +330,38 @@ const VideoCall = () => {
       setVideoCallStatus("end")
       setIsCallNotifiactionOpen(false)
       socket.emit("send-end-call", {roomId: chatId})
+      endStreaming()
+      setOpenModal(true)
     } 
     catch (error) {
       clientCatchError(error)
     }
   }
 
+  const endStreaming = ()=>{
+    localStreamRef.current?.getTracks().forEach(track=>track.stop())
+    if(localVideoRef.current){
+      localVideoRef.current.srcObject = null
+    }
+    if(remoteVideoRef.current){
+      remoteVideoRef.current.srcObject = null
+    }
+  }
+
+  const redirectOnCallEnd = ()=>{
+    setOpenModal(false)
+    // navigate('/chat')
+    if(VideoOn) setVideoOn(false)
+    if(micOn) setmicOn(false)
+    if(screenShareOn) setScreenShareOn(false)
+  }
+
   const onAcceptEndCall = async()=>{
     try {
       setVideoCallStatus("end")
       setIsCallNotifiactionOpen(false)
+      endStreaming()
+      setOpenModal(true)
     } 
     catch (error) {
       return clientCatchError(error)  
@@ -634,6 +684,44 @@ const VideoCall = () => {
             </div>
           </div>
         }
+        <Modal isOpen={openModal} onClose={redirectOnCallEnd}>
+          <div className="flex flex-col items-center text-center py-4">
+            
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-8 w-8 text-red-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </div>
+
+            <h2 className="text-2xl font-semibold text-gray-900">
+              Call Disconnected
+            </h2>
+
+            <p className="mt-2 text-sm text-gray-500">
+              The call has ended or the other participant left the meeting.
+            </p>
+
+            <Button
+              onClick={redirectOnCallEnd}
+              bgColor="bg-red-600"
+              className="mt-6 flex items-center gap-2"
+            >
+              <BiLeftArrow />
+              Go Back
+            </Button>
+          </div>
+        </Modal>
     </div>
   );
 };

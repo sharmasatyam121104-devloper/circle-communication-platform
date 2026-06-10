@@ -5,8 +5,8 @@ import {X} from "lucide-react";
 
 type ModalProps = {
   isOpen: boolean;
-  onClose: () => void;
-  children: ReactNode;
+  onClose?: () => void;
+  children?: ReactNode;
   title?: string;
   width?: string;
 };
