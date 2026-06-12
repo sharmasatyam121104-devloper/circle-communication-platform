@@ -10,6 +10,7 @@ import PublicRoute from "./routes/PublicRoute"
 import UpdateImage from "./pages/UpdateImage"
 import AudioCall from "./pages/AudioCall"
 import VideoCall from "./pages/VideoCall"
+import socket from "./lib/socketClient"
 
 
 
@@ -17,6 +18,7 @@ const App = () => {
   const getMe = useAuthStore((state) => state.getMe);
 
   useEffect(() => {
+    socket.emit("get-online-users")
     getMe();
   }, [getMe]);
 

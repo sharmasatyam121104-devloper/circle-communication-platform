@@ -121,7 +121,6 @@ const MessageSocket = (io: Server)=>{
                         const chat = await ChatModel.findById(chatId);
 
                         if (!chat) {
-                            console.log("Chat not found");
                             return;
                         }
 

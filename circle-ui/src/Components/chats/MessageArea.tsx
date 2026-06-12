@@ -87,7 +87,6 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat, joinChat, setJ
             if (senderId === user?.data?._id) return;
 
             if (message.chat === openChatId) {
-                console.log("same chat");
                 return;
             }
 

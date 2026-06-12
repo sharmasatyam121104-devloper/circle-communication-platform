@@ -4,7 +4,6 @@ import jwt from "jsonwebtoken";
 const VideoCallSocket = (io: Server)=>{
     try {
         io.on("connection", async(socket)=>{
-            console.log("🔌 user connected:", socket.id);
             const cookie = socket.handshake.headers.cookie;
 
             const access_token = cookie
@@ -27,7 +26,6 @@ const VideoCallSocket = (io: Server)=>{
 
             socket.on("join-room", (roomId) => {
                 socket.join(roomId);
-                console.log("joined room:", roomId);
             });
 
             

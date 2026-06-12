@@ -95,40 +95,36 @@ const Chat = () => {
 
   const [joinChat, setJoinChat] = useState(false)
 
-    const [notification, setNotification] = useState({
-        _id: "",
-        fullname: "",
-        email: "",
-        profile_picture_url: "",
-        message: "",
-        time: "",
-    });
-    const [showNotification, setShowNotification] = useState(false)
+  const [notification, setNotification] = useState({
+      _id: "",
+      fullname: "",
+      email: "",
+      profile_picture_url: "",
+      message: "",
+      time: "",
+  });
+  const [showNotification, setShowNotification] = useState(false)
    
 
 
 
-const sendersData = useMemo(() => {
-  return allChats.flatMap((chat) => {
-    const found = chat.participants.find(
-      (participant) => participant._id !== user?.data?._id
-    );
-    return found ? [found] : [];
-  });
-}, [allChats, user]);
+  const sendersData = useMemo(() => {
+    return allChats.flatMap((chat) => {
+      const found = chat.participants.find(
+        (participant) => participant._id !== user?.data?._id
+      );
+      return found ? [found] : [];
+    });
+  }, [allChats, user]);
 
-console.log(sendersData);
 
 
   useEffect(() => {
       const handler = ({senderId,message,}: {senderId: string;message: MessageInterface;}) => {
 
-          console.log("notification received");
-
           if (senderId === user?.data?._id) return;
 
           if (message.chat === openChatId) {
-              console.log("same chat");
               return;
           }
 
@@ -256,6 +252,8 @@ console.log(sendersData);
     socket.on("online-users", (users) => {
       setOnlineUsers(users)
     });
+
+    socket.emit("get-online-users")
 
     return () => {
       socket.disconnect();
@@ -458,16 +456,38 @@ return (
               <ArrowBigLeft />
             </Link>
 
-            <div className="flex gap-2 items-center min-w-0">
-              <Avatar src={`${server}${openChatUser?.profile_picture_url}`}/>
+            <div className="flex items-center gap-3 min-w-0">
+              <Avatar src={`${server}${openChatUser?.profile_picture_url}`} />
 
-              <div className="min-w-0">
-                <h1 className="font-medium truncate text-sm lg:text-base">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <h2 className="font-semibold text-sm lg:text-base truncate">
+                    {openChatUser?.fullname}
+                  </h2>
+
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      openUserId && onlineUsers.includes(openUserId)
+                        ? "bg-green-500"
+                        : "bg-gray-400"
+                    }`}
+                  />
+                </div>
+
+                <p
+                  className={`text-xs ${
+                    openUserId && onlineUsers.includes(openUserId)
+                      ? "text-green-500"
+                      : "text-gray-500"
+                  }`}
+                >
+                  {openUserId && onlineUsers.includes(openUserId)
+                    ? "Online"
+                    : "Offline"}
+                </p>
+
+                <p className="text-xs text-gray-500 truncate">
                   {openChatUser?.email}
-                </h1>
-
-                <p className="text-xs lg:text-sm truncate">
-                  {openChatUser?.fullname}
                 </p>
               </div>
             </div>

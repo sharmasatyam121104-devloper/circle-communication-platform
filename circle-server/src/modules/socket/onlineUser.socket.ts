@@ -25,17 +25,16 @@ const OnlineUserSocket = (io: Server) => {
 
                 onlineUsers.set(userId, socket.id);
 
-                console.log("Current Online Users:");
-                console.log([...onlineUsers.keys()]);
-
                 io.emit("online-users", [...onlineUsers.keys()]);
+
+                socket.on("get-online-users", ()=>{
+                    io.emit("online-users", [...onlineUsers.keys()]);
+                })
 
                 socket.on("disconnect", () => {
                     onlineUsers.delete(userId);
 
                     io.emit("online-users", [...onlineUsers.keys()]);
-                    console.log("Current Online Users:");
-                    console.log([...onlineUsers.keys()]);
                 });
             } 
             catch (error) {
