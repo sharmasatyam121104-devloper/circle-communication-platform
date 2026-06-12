@@ -109,29 +109,6 @@ const VideoCall = () => {
   const [offerPayload, setOfferPayload] = useState<OfferPayloadInterface | null>(null)
 
 
-  // const stopAudio = ()=>{
-  //   if(!audioRef.current) return
-
-  //   const player = audioRef.current
-  //   player.pause()
-  //   player.currentTime = 0
-  // }
-
-  // const playAudio = (src: AudioSrcType, loop: boolean = false)=>{
-  //   stopAudio()
-
-  //   if(!audioRef.current){
-  //     audioRef.current = new Audio()
-  //   }
-
-  //   const player = audioRef.current
-  //   player.src = src
-  //   player.loop = loop
-  //   player.load()
-  //   player.play()
-
-  // }
-
   const toggleScreen = async()=>{
     try {
       const localVideo = localVideoRef.current 
@@ -139,11 +116,34 @@ const VideoCall = () => {
 
       if(!screenShareOn){
         const stream = await navigator.mediaDevices.getDisplayMedia({video: true, audio: true})
+        const screenShareTrack = stream.getVideoTracks()[0]
+        const senderShareTrack = webRtcRef.current?.getSenders().find((s)=>s.track?.kind === "video")
+
       
+        if(screenShareTrack && senderShareTrack){
+          await senderShareTrack?.replaceTrack(screenShareTrack)
+          setVideoOn(false)
+        }
+
         localVideo.srcObject = stream
         localStreamRef.current = stream
         setScreenShareOn(true)
         setmicOn(true)
+
+        //Detect screen shareing off
+        screenShareTrack.onended = async()=>{
+          setScreenShareOn(false)
+          const videoCamStream = await navigator.mediaDevices.getUserMedia({video: true})
+          const videoTrack = videoCamStream.getVideoTracks()[0]
+          const senderTrack = webRtcRef.current?.getSenders().find((s)=>s.track?.kind === "video")
+
+          if(videoTrack && senderTrack){
+            await senderTrack?.replaceTrack(videoTrack)
+          }
+          localVideo.srcObject = videoCamStream
+          localStreamRef.current = videoCamStream
+          setVideoOn(true)
+        }
       }
       else{
         const localStream = localStreamRef.current
@@ -168,22 +168,32 @@ const VideoCall = () => {
       if(!localVideo) return
 
       if(!VideoOn){
+
+          const existingTrack =
+            localStreamRef.current?.getVideoTracks()[0];
+
+          if (existingTrack) {
+            existingTrack.enabled = true;
+            setVideoOn(true);
+            return;
+          }
+
         const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true})
 
         localVideo.srcObject = stream
         localStreamRef.current = stream
+        
         setVideoOn(true)
         setmicOn(true)
       }
       else{
-        const localStream = localStreamRef.current
-        if(!localStream) return
+        const videoTrack = localStreamRef.current
+          ?.getVideoTracks()[0]
 
-        localStream.getTracks().forEach((track)=>track.stop())
-        localVideo.srcObject = null
-        localStreamRef.current = null
-        setVideoOn(false)
-        setmicOn(false)
+        if(videoTrack){
+          videoTrack.enabled = false
+          setVideoOn(false)
+        }
       }
     } 
     catch (error) {
@@ -417,7 +427,7 @@ const VideoCall = () => {
       socket.off("accept-offer", onAcceptOffer)
       socket.off("accept-candidate", onAcceptCandidate)
       socket.off("accept-answer", onAcceptAnswer)
-      socket.on("accept-end-call", onAcceptEndCall)
+      socket.off("accept-end-call", onAcceptEndCall)
     }
   },[])
 
