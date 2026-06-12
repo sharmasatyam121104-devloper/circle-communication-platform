@@ -8,7 +8,7 @@ import {
   ScreenShare,
   ArrowLeft,
 } from "lucide-react";
-import { Link, useLocation} from "react-router-dom";
+import { Link, useLocation, useNavigate} from "react-router-dom";
 import useAuthStore from "../store/useAuthStore";
 import api from "../lib/api";
 import ErrorPage from "../Components/page-components/ErrorPage";
@@ -83,6 +83,7 @@ const VideoCall = () => {
   const localVideoRef = useRef<HTMLVideoElement | null>(null)
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null)
   const localStreamRef = useRef<MediaStream | null>(null)
+  const cameraStreamRef = useRef<MediaStream | null>(null)
   const webRtcRef = useRef<RTCPeerConnection | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
@@ -92,6 +93,7 @@ const VideoCall = () => {
   const remoteUser = chatData?.participants.find((participant) => participant._id !== user?.data._id);
 
 
+  const navigate = useNavigate()
   const location = useLocation()
   const chatId = location.pathname.split('/').pop()
   const isMediaActive = VideoOn || micOn || screenShareOn;
@@ -100,6 +102,7 @@ const VideoCall = () => {
   const [callType, setCallType] = useState<"audio" | "video">("video");
   const [callDirection, setCallDirection] = useState<"incoming" | "outgoing">("incoming");
   const [isCallNotificationOpen, setIsCallNotifiactionOpen] = useState(false)
+  const [callEnd, setCallEnd] = useState(false)
 
   const [callerName, setCallerName] = useState("");
   const [receiverName, setReceiverName] = useState("");
@@ -109,97 +112,156 @@ const VideoCall = () => {
   const [offerPayload, setOfferPayload] = useState<OfferPayloadInterface | null>(null)
 
 
-  const toggleScreen = async()=>{
+  const toggleScreen = async () => {
     try {
-      const localVideo = localVideoRef.current 
-      if(!localVideo) return
+      const localVideo = localVideoRef.current;
+      if (!localVideo) return;
 
-      if(!screenShareOn){
-        const stream = await navigator.mediaDevices.getDisplayMedia({video: true, audio: true})
-        const screenShareTrack = stream.getVideoTracks()[0]
-        const senderShareTrack = webRtcRef.current?.getSenders().find((s)=>s.track?.kind === "video")
+      // START SCREEN SHARE
+      if (!screenShareOn) {
 
-      
-        if(screenShareTrack && senderShareTrack){
-          await senderShareTrack?.replaceTrack(screenShareTrack)
-          setVideoOn(false)
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+          audio: true,
+        });
+
+        const screenTrack = screenStream.getVideoTracks()[0];
+
+        const sender = webRtcRef.current
+          ?.getSenders()
+          .find((s) => s.track?.kind === "video");
+
+        if (screenTrack && sender) {
+          await sender.replaceTrack(screenTrack);
         }
 
-        localVideo.srcObject = stream
-        localStreamRef.current = stream
-        setScreenShareOn(true)
-        setmicOn(true)
+        localVideo.srcObject = screenStream;
+        localStreamRef.current = screenStream;
 
-        //Detect screen shareing off
-        screenShareTrack.onended = async()=>{
-          setScreenShareOn(false)
-          const videoCamStream = await navigator.mediaDevices.getUserMedia({video: true})
-          const videoTrack = videoCamStream.getVideoTracks()[0]
-          const senderTrack = webRtcRef.current?.getSenders().find((s)=>s.track?.kind === "video")
+        setScreenShareOn(true);
+        setVideoOn(false);
 
-          if(videoTrack && senderTrack){
-            await senderTrack?.replaceTrack(videoTrack)
-          }
-          localVideo.srcObject = videoCamStream
-          localStreamRef.current = videoCamStream
-          setVideoOn(true)
-        }
-      }
-      else{
-        const localStream = localStreamRef.current
-        localStreamRef.current = null
-        if(!localStream) return
+        // Browser screen share stop button pressed
+        screenTrack.onended = async () => {
 
-        localStream.getTracks().forEach((track)=>track.stop())
-        localVideo.srcObject = null
-        localStreamRef.current = null
-        setScreenShareOn(false)
-        setmicOn(false)
-      }
-    } 
-    catch (error) {
-      clientCatchError(error)  
-    }
-  }
+          const cameraStream = cameraStreamRef.current;
 
-  const toggleVideo = async()=>{
-    try {
-      const localVideo = localVideoRef.current
-      if(!localVideo) return
-
-      if(!VideoOn){
-
-          const existingTrack =
-            localStreamRef.current?.getVideoTracks()[0];
-
-          if (existingTrack) {
-            existingTrack.enabled = true;
-            setVideoOn(true);
+          if (!cameraStream) {
+            setScreenShareOn(false);
             return;
           }
 
-        const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true})
+          const cameraTrack =
+            cameraStream.getVideoTracks()[0];
 
-        localVideo.srcObject = stream
-        localStreamRef.current = stream
-        
-        setVideoOn(true)
-        setmicOn(true)
+          const sender = webRtcRef.current
+            ?.getSenders()
+            .find((s) => s.track?.kind === "video");
+
+          if (cameraTrack && sender) {
+            await sender.replaceTrack(cameraTrack);
+          }
+
+          localVideo.srcObject = cameraStream;
+          localStreamRef.current = cameraStream;
+
+          setScreenShareOn(false);
+          setVideoOn(cameraTrack.enabled);
+        };
       }
-      else{
-        const videoTrack = localStreamRef.current
-          ?.getVideoTracks()[0]
 
-        if(videoTrack){
-          videoTrack.enabled = false
-          setVideoOn(false)
+      // STOP SCREEN SHARE MANUALLY
+      else {
+
+        const screenStream = localStreamRef.current;
+
+        screenStream?.getTracks().forEach((track) => {
+          track.stop();
+        });
+
+        const cameraStream = cameraStreamRef.current;
+
+        if (!cameraStream) {
+          localVideo.srcObject = null;
+          localStreamRef.current = null;
+          setScreenShareOn(false);
+          return;
         }
+
+        const cameraTrack =
+          cameraStream.getVideoTracks()[0];
+
+        const sender = webRtcRef.current
+          ?.getSenders()
+          .find((s) => s.track?.kind === "video");
+
+        if (cameraTrack && sender) {
+          await sender.replaceTrack(cameraTrack);
+        }
+
+        localVideo.srcObject = cameraStream;
+        localStreamRef.current = cameraStream;
+
+        setScreenShareOn(false);
+        setVideoOn(cameraTrack.enabled);
       }
-    } 
-    catch (error) {
-      clientCatchError(error)  
+
+    } catch (error) {
+      clientCatchError(error);
     }
-  }
+  };
+
+  const toggleVideo = async () => {
+    try {
+      const localVideo = localVideoRef.current;
+      if (!localVideo) return;
+
+      if (!VideoOn) {
+        if(screenShareOn){
+           return toast.info("Please off screen share first.")
+        }
+
+        const cameraTrack =
+          cameraStreamRef.current?.getVideoTracks()[0];
+
+        if (cameraTrack) {
+          cameraTrack.enabled = true;
+
+          localVideo.srcObject = cameraStreamRef.current;
+          localStreamRef.current = cameraStreamRef.current;
+
+          setVideoOn(true);
+          return;
+        }
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        });
+
+        cameraStreamRef.current = stream;
+
+        localVideo.srcObject = stream;
+        localStreamRef.current = stream;
+
+        setVideoOn(true);
+        setmicOn(true);
+
+      } else {
+
+        const videoTrack =
+          cameraStreamRef.current?.getVideoTracks()[0];
+
+        if (videoTrack) {
+          videoTrack.enabled = false;
+          setVideoOn(false);
+        }
+
+      }
+    } catch (error) {
+      clientCatchError(error);
+    }
+};
 
   const toggleMic = ()=>{
     try {
@@ -364,6 +426,9 @@ const VideoCall = () => {
     if(VideoOn) setVideoOn(false)
     if(micOn) setmicOn(false)
     if(screenShareOn) setScreenShareOn(false)
+    setCallEnd(true)
+    setTimer(0)
+    navigate("/chat")
   }
 
   const onAcceptEndCall = async()=>{
@@ -434,9 +499,11 @@ const VideoCall = () => {
 
   useEffect(() => {
     if (!chatId) return;
+    socket.connect();
     socket.emit("join-room", chatId);
 
     return () => {
+      socket.disconnect();
       socket.emit("leave-room", chatId);
     };
   }, [chatId]);
@@ -568,12 +635,12 @@ const VideoCall = () => {
               autoPlay
               playsInline
               className={`w-full h-full object-cover ${
-                isRemoteStreamStart ? "block" : "hidden"
+                (isRemoteStreamStart) ? "block" : "hidden"
               }`}
             />
 
-            {!isRemoteStreamStart && (
-              <div className="flex flex-col items-center justify-center gap-2">
+            {(!isRemoteStreamStart || callEnd ) && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                 <img
                   src={`${server}${remoteUser?.profile_picture_url}`}
                   alt={remoteUser?.fullname}

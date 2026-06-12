@@ -34,7 +34,7 @@ const MessageSocket = (io: Server)=>{
                     socket.leave(chatId);
                 })
 
-                socket.on("send-message", async(message: any)=>{
+                socket.on("send-message", async (message: any) => {
                     io.to(message.chat).emit("recive-message", message);
 
                     const chat = await ChatModel.findById(message.chat);
@@ -47,12 +47,29 @@ const MessageSocket = (io: Server)=>{
 
                     if (!receiverId) return;
 
+                    const room = io.sockets.adapter.rooms.get(message.chat);
+
+                    const bothUsersInChat = room && room.size >= 2;
+
+                    if (bothUsersInChat) {
+                        await MessageModel.findByIdAndUpdate(
+                            message._id,
+                            {
+                                status: "read",
+                            },
+                            { new: true }
+                        );
+
+                        io.to(message.chat).emit("messages-read", {
+                            chatId: message.chat,
+                        });
+                    }
+
                     io.to(receiverId.toString()).emit("msg-notification", {
                         senderId: socket.data.userId,
                         message,
                     });
-
-                })
+                });
 
                 socket.on("message-delivered", async ({ messageId, chatId }) => {
                     try {
@@ -117,7 +134,7 @@ const MessageSocket = (io: Server)=>{
                             return;
                         }
 
-                        const messages = await MessageModel.updateMany(
+                        await MessageModel.updateMany(
                             {
                                 chat: chatId,
                                 sender: { $ne: userId },
@@ -127,8 +144,6 @@ const MessageSocket = (io: Server)=>{
                                 status: "read"
                             }
                         );
-
-                        console.log("EMITTING messages-read", chatId);
 
                         io.to(chatId).emit("messages-read", {
                             chatId,
