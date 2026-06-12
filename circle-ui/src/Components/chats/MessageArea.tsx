@@ -138,7 +138,6 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat, joinChat, setJ
     }, [joinChat, user?.data._id]);
 
 
-
     useEffect(() => {
         const handleStatusUpdate = (updatedMessage: MessageInterface) => {
             setAllMessgaeOfChat((prev) =>
@@ -156,7 +155,6 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat, joinChat, setJ
             socket.off("message-status-update", handleStatusUpdate);
         };
     }, []);
-
 
     
     useEffect(() => {
@@ -180,11 +178,9 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat, joinChat, setJ
     }, [openChatId, addMessageInChat, user]);
 
 
-
     useEffect(() => {
         scrollToBottom()
     }, [allMessageOfChat])
-
 
 
     useEffect(()=>{
@@ -208,7 +204,6 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat, joinChat, setJ
 
         getAllMessageOfChat()
     },[openChatId])
-
 
 
     useEffect(() => {
@@ -241,28 +236,29 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat, joinChat, setJ
             socket.off("connect", handleConnect);
             setJoinChat(false);
         };
-    }, []);
+    }, [openChatId, setJoinChat]);
 
-useEffect(() => {
-    if (!openChatId) return;
 
-    const emitRead = () => {
-        socket.emit("join-chat", openChatId);
+    useEffect(() => {
+        if (!openChatId) return;
 
-        socket.emit("messages-read", {
-            chatId: openChatId
-        });
+        const emitRead = () => {
+            socket.emit("join-chat", openChatId);
 
-        setJoinChat(true);
-    };
+            socket.emit("messages-read", {
+                chatId: openChatId
+            });
 
-    emitRead();
+            setJoinChat(true);
+        };
 
-    return () => {
-        socket.emit("leave-chat", openChatId);
-        setJoinChat(false);
-    };
-}, [openChatId]);
+        emitRead();
+
+        return () => {
+            socket.emit("leave-chat", openChatId);
+            setJoinChat(false);
+        };
+    }, [openChatId, setJoinChat]);
     
 
     if(allMessageOfChatLoading){
