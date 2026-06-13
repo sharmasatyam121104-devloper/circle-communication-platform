@@ -4,6 +4,7 @@ import corsOptions from "./config/cors.config";
 import MessageSocket from "./modules/socket/message.socket";
 import OnlineUserSocket from "./modules/socket/onlineUser.socket";
 import VideoCallSocket from "./modules/socket/videoCall.socket";
+import AudioCallSocket from "./modules/socket/audioCall.socket";
 
 
 const io = new Server(server, { cors: corsOptions})
@@ -11,5 +12,6 @@ const io = new Server(server, { cors: corsOptions})
 OnlineUserSocket(io)
 MessageSocket(io)
 VideoCallSocket(io)
+AudioCallSocket(io)
 
 export default io;

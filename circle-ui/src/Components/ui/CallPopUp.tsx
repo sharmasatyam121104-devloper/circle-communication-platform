@@ -50,9 +50,15 @@ const CallPopup = ({
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             {type === "video" ? (
-              <Video size={18} className="text-indigo-600" />
+              <div>
+                <Video size={18} className="text-indigo-600" />
+                <h3 className="text-sm font-medium text-indigo-800">Video Call Comming</h3>
+              </div>
             ) : (
-              <Mic size={18} className="text-green-600" />
+              <div className="flex gap-3 items-center">
+                <Mic size={18} className="text-green-600" />
+                <h3 className="text-sm font-medium text-indigo-800">Audio Call Comming</h3>
+              </div>
             )}
 
             <span className="text-sm font-semibold capitalize">
