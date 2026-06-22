@@ -224,7 +224,7 @@ const VideoCall = () => {
         const cameraTrack =
           cameraStreamRef.current?.getVideoTracks()[0];
 
-        if (cameraTrack) {
+        if(cameraTrack) {
           cameraTrack.enabled = true;
 
           localVideo.srcObject = cameraStreamRef.current;
@@ -247,10 +247,10 @@ const VideoCall = () => {
         setVideoOn(true);
         setmicOn(true);
 
-      } else {
+      } 
+      else {
 
-        const videoTrack =
-          cameraStreamRef.current?.getVideoTracks()[0];
+        const videoTrack = cameraStreamRef.current?.getVideoTracks()[0];
 
         if (videoTrack) {
           videoTrack.enabled = false;
@@ -503,11 +503,31 @@ const VideoCall = () => {
     socket.emit("join-room", chatId);
 
     return () => {
-      socket.disconnect();
       socket.emit("leave-room", chatId);
+      socket.disconnect();
     };
   }, [chatId]);
 
+useEffect(() => {
+  const handleBeforeUnload = () => {
+    if (
+      videoCallStatus === "calling" ||
+      videoCallStatus === "incoming" ||
+      videoCallStatus === "talking"
+    ) {
+      socket.emit("send-end-call", {
+        roomId: chatId,
+      });
+      endStreaming();
+    }
+  };
+
+  window.addEventListener("beforeunload", handleBeforeUnload);
+
+  return () => {
+    window.removeEventListener("beforeunload", handleBeforeUnload);
+  };
+}, [videoCallStatus, chatId]);
 
   useEffect(()=>{
 

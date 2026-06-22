@@ -30,11 +30,14 @@ const VideoCallSocket = (io: Server)=>{
 
             
             socket.on("send-offer", ({ offer, roomId, to, callerName }) => {
-                socket.to(roomId).emit("accept-offer", {
+                socket.to(to).emit("video-call-comming", {chatId: roomId})
+                setTimeout(()=>{
+                    socket.to(roomId).emit("accept-offer", {
                     offer,
                     from: socket.data.userId,
                     callerName
                 });
+                },200)
             });
 
             socket.on("send-candidate", ({candidate, roomId})=>{

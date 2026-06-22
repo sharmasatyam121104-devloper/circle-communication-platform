@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom"
+import { Route, Routes, useLocation, useNavigate } from "react-router-dom"
 import Home from "./pages/Home"
 import Login from "./pages/Login"
 import Signup from "./pages/Signup"
@@ -12,10 +12,37 @@ import AudioCall from "./pages/AudioCall"
 import VideoCall from "./pages/VideoCall"
 import socket from "./lib/socketClient"
 
+interface IncomingCallDataInterface{
+  chatId: string
+}
+
 
 
 const App = () => {
+
+  const navigate = useNavigate();
+  const location = useLocation();
   const getMe = useAuthStore((state) => state.getMe);
+
+
+    useEffect(() => {
+    const handleIncomingVideoCall = (data: IncomingCallDataInterface) => {
+
+      if (location.pathname.startsWith("/video-call/")) {
+        return console.log("alredy in video call page");;
+      }
+
+      navigate(`/video-call/${data.chatId}`);
+
+      console.log("navigate called");
+      };
+
+    socket.on("video-call-comming", handleIncomingVideoCall);
+
+    return () => {
+      socket.off("video-call-comming", handleIncomingVideoCall);
+    };
+  }, [navigate, location.pathname]);
 
   useEffect(() => {
     socket.emit("get-online-users")
