@@ -28,12 +28,15 @@ const AudioCallSocket = (io: Server)=>{
                 socket.join(roomId);
             });
 
-            socket.on("send-offer", ({ offer, roomId, callerName }) => {
-                socket.to(roomId).emit("accept-offer", {
-                    offer,
-                    from: socket.data.userId,
-                    callerName
-                });
+            socket.on("send-offer", ({ offer, to, roomId, callerName }) => {
+                socket.to(to).emit("voice-call-comming", {chatId: roomId})
+                setTimeout(()=>{
+                    socket.to(roomId).emit("accept-offer", {
+                        offer,
+                        from: socket.data.userId,
+                        callerName
+                    });
+                },200)
             });
 
             socket.on("send-candidate", ({candidate, roomId})=>{

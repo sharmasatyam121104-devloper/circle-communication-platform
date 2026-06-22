@@ -219,7 +219,7 @@ const AudioCall = () => {
       await webRtcRef.current.setLocalDescription(offer)
 
       startSenderCallUI()
-      socket.emit("send-offer", {offer, roomId: chatId, callerName: user?.data.fullname})
+      socket.emit("send-offer", {offer, roomId: chatId, to: remoteUser?._id, callerName: user?.data.fullname})
     } 
     catch (error) {
      return clientCatchError(error)  

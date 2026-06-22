@@ -25,7 +25,7 @@ const App = () => {
   const getMe = useAuthStore((state) => state.getMe);
 
 
-    useEffect(() => {
+  useEffect(() => {
     const handleIncomingVideoCall = (data: IncomingCallDataInterface) => {
 
       if (location.pathname.startsWith("/video-call/")) {
@@ -41,6 +41,25 @@ const App = () => {
 
     return () => {
       socket.off("video-call-comming", handleIncomingVideoCall);
+    };
+  }, [navigate, location.pathname]);
+
+  useEffect(() => {
+    const handleIncomingVideoCall = (data: IncomingCallDataInterface) => {
+
+      if (location.pathname.startsWith("/video-call/")) {
+        return console.log("alredy in video call page");;
+      }
+
+      navigate(`/audio-call/${data.chatId}`);
+
+      console.log("navigate called");
+      };
+
+    socket.on("voice-call-comming", handleIncomingVideoCall);
+
+    return () => {
+      socket.off("voice-call-comming", handleIncomingVideoCall);
     };
   }, [navigate, location.pathname]);
 
