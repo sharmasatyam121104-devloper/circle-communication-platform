@@ -33,6 +33,7 @@ interface ParticipantInterface {
   fullname: string;
   email: string;
   profile_picture_url: string;
+  updatedAt: string
 }
 
 interface AttachmentInterface {
@@ -63,13 +64,13 @@ export interface MessageInterface {
 
 const server = import.meta.env.VITE_SERVER;
 
+
 const Chat = () => {
   const navigate = useNavigate();
   const location = useLocation()
   const { userId: id } = useParams();
   const isChatOpen = Boolean(id); 
 
-  
 
   const [isAddMemberInChatModalOpen, setIsAddMemberInChatModalOpen] = useState(false)
   const [allChats, setAllChats] = useState<ChatInterface[]>([])
@@ -169,7 +170,7 @@ const Chat = () => {
     }
 
     getAllChats()
-  },[isAddMemberInChatModalOpen])
+  },[isAddMemberInChatModalOpen,location.pathname])
 
   useEffect(()=>{
     if (!allChats || !openUserId ) return;
@@ -383,7 +384,7 @@ return (
                     ? (newLastMessage ?? items.lastMessage?.text)
                     : (items.lastMessage?.text || "No messages yet")
                 }
-                avatar={`${server}${otherParticipant?.profile_picture_url}`}
+                avatar={`${server}${otherParticipant?.profile_picture_url}?v=${otherParticipant?.updatedAt}`}
                 isOnline={onlineUsers.includes(otherParticipant?._id || "")}
                 onClick={() => {
                   navigate(`/chat/${otherParticipant?._id}`);

@@ -4,6 +4,8 @@ import { SessionInterface } from "../user/user.interface";
 import ChatModel from "./chat.model";
 import UserModel from "../user/user.model";
 
+
+
 export const createChat = async(req: SessionInterface, res: Response)=>{
     try {
         const id = req.id?.toString();
@@ -60,7 +62,7 @@ export const getAllChats = async(req: SessionInterface, res: Response)=>{
         })
         .populate({
             path: "participants",
-            select: "fullname email profile_picture_url",
+            select: "fullname email profile_picture_url updatedAt",
         })
         .sort({ updatedAt: -1 });
 

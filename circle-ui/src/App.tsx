@@ -17,7 +17,6 @@ interface IncomingCallDataInterface{
 }
 
 
-
 const App = () => {
 
   const navigate = useNavigate();
