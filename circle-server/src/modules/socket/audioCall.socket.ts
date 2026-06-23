@@ -28,10 +28,10 @@ const AudioCallSocket = (io: Server)=>{
                 socket.join(roomId);
             });
 
-            socket.on("send-offer", ({ offer, to, roomId, callerName }) => {
-                socket.to(to).emit("voice-call-comming", {chatId: roomId})
+            socket.on("audio-send-offer", ({ offer, to, roomId, callerName }) => {
+                socket.to(to).emit("audio-call-comming", {chatId: roomId})
                 setTimeout(()=>{
-                    socket.to(roomId).emit("accept-offer", {
+                    socket.to(roomId).emit("audio-accept-offer", {
                         offer,
                         from: socket.data.userId,
                         callerName
@@ -39,12 +39,23 @@ const AudioCallSocket = (io: Server)=>{
                 },200)
             });
 
-            socket.on("send-candidate", ({candidate, roomId})=>{
-                socket.to(roomId).emit("accept-candidate",{
+            socket.on("audio-send-candidate", ({candidate, roomId})=>{
+                socket.to(roomId).emit("audio-accept-candidate",{
                     candidate,
                     from: socket.data.userId, 
                 })              
             });
+
+            socket.on("audio-send-answer", ({answer, roomId})=>{
+                socket.to(roomId).emit("audio-accept-answer",{
+                    answer,
+                    from: socket.data.userId
+                })
+            })
+
+            socket.on("audio-send-end-call", ({roomId})=>{
+                socket.to(roomId).emit("audio-accept-end-call")
+            })
         })
     } 
     catch (error) {

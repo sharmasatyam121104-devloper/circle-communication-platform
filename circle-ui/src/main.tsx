@@ -11,6 +11,7 @@ createRoot(document.getElementById('root')!).render(
       position="top-center"
       richColors 
       expand={false}
+      closeButton
     />
     <BrowserRouter>
       <App />

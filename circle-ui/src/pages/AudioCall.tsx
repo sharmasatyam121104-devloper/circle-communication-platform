@@ -1,4 +1,4 @@
-import { Mic, MicOff, Phone } from "lucide-react"
+import { ArrowLeft, Mic, MicOff, Phone } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import api from "../lib/api"
@@ -62,8 +62,6 @@ const config = {
 };
 
 type CallType = "pending" | "calling" | "incoming" | "talking" | "end"
-
-// type AudioSrcType = "/call-ring.mp3" |  "/start-ring.mp3" |  "/call-end.mp3"
 
 const AudioCall = () => {
   const [openModal, setOpenModal] = useState(false)
@@ -183,7 +181,7 @@ const AudioCall = () => {
 
       webRtcRef.current.onicecandidate = (e)=>{
         if(e.candidate){
-          socket.emit("send-candidate", {candidate: e.candidate, roomId: chatId})
+          socket.emit("audio-send-candidate", {candidate: e.candidate, roomId: chatId})
         }
       }
 
@@ -219,7 +217,7 @@ const AudioCall = () => {
       await webRtcRef.current.setLocalDescription(offer)
 
       startSenderCallUI()
-      socket.emit("send-offer", {offer, roomId: chatId, to: remoteUser?._id, callerName: user?.data.fullname})
+      socket.emit("audio-send-offer", {offer, roomId: chatId, to: remoteUser?._id, callerName: user?.data.fullname})
     } 
     catch (error) {
      return clientCatchError(error)  
@@ -256,7 +254,7 @@ const AudioCall = () => {
       const answer = await webRtcRef.current.createAnswer()
       await webRtcRef.current.setLocalDescription(answer)
 
-      socket.emit("send-answer", {answer, roomId: chatId})
+      socket.emit("audio-send-answer", {answer, roomId: chatId})
 
       setAuidoCallStatus("talking")
       setIsCallNotifiactionOpen(false)
@@ -271,7 +269,7 @@ const AudioCall = () => {
     try {
       setAuidoCallStatus("end")
       setIsCallNotifiactionOpen(false)
-      socket.emit("send-end-call", {roomId: chatId})
+      socket.emit("audio-send-end-call", {roomId: chatId})
       endStreaming()
       setOpenModal(true)
     } 
@@ -347,16 +345,16 @@ const AudioCall = () => {
   }
 
   useEffect(()=>{
-    socket.on("accept-offer", onAcceptOffer)
-    socket.on("accept-candidate", onAcceptCandidate)
-    socket.on("accept-answer", onAcceptAnswer)
-    socket.on("accept-end-call", onAcceptEndCall)
+    socket.on("audio-accept-offer", onAcceptOffer)
+    socket.on("audio-accept-candidate", onAcceptCandidate)
+    socket.on("audio-accept-answer", onAcceptAnswer)
+    socket.on("audio-accept-end-call", onAcceptEndCall)
 
     return ()=>{
-      socket.off("accept-offer", onAcceptOffer)
-      socket.off("accept-candidate", onAcceptCandidate)
-      socket.off("accept-answer", onAcceptAnswer)
-      socket.off("accept-end-call", onAcceptEndCall)
+      socket.off("audio-accept-offer", onAcceptOffer)
+      socket.off("audio-accept-candidate", onAcceptCandidate)
+      socket.off("audio-accept-answer", onAcceptAnswer)
+      socket.off("audio-accept-end-call", onAcceptEndCall)
     }
   },[])
 
@@ -455,8 +453,15 @@ const AudioCall = () => {
       {/* Header */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800">
 
-        {/* Timer */}
-        <div className="w-24 text-left">
+        {/* Back + Timer */}
+        <div className="w-24 flex items-center gap-2">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-1 rounded-full hover:bg-slate-800 transition"
+          >
+            <ArrowLeft size={20} />
+          </button>
+
           {audioCallStatus === "talking" && (
             <p className="text-green-400 font-medium text-sm">
               {Math.floor(timer / 60)}:

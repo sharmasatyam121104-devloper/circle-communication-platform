@@ -30,10 +30,8 @@ const App = () => {
       if (location.pathname.startsWith("/video-call/")) {
         return console.log("alredy in video call page");;
       }
-
+ console.log("VIDEO EVENT RECEIVED", data);
       navigate(`/video-call/${data.chatId}`);
-
-      console.log("navigate called");
       };
 
     socket.on("video-call-comming", handleIncomingVideoCall);
@@ -44,21 +42,19 @@ const App = () => {
   }, [navigate, location.pathname]);
 
   useEffect(() => {
-    const handleIncomingVideoCall = (data: IncomingCallDataInterface) => {
+    const handleIncomingVoiceCall = (data: IncomingCallDataInterface) => {
 
-      if (location.pathname.startsWith("/video-call/")) {
-        return console.log("alredy in video call page");;
+      if (location.pathname.startsWith("/audio-call/")) {
+        return console.log("alredy in video call page");
       }
-
+console.log("AUDIO EVENT RECEIVED", data);
       navigate(`/audio-call/${data.chatId}`);
-
-      console.log("navigate called");
       };
 
-    socket.on("voice-call-comming", handleIncomingVideoCall);
+    socket.on("audio-call-comming", handleIncomingVoiceCall);
 
     return () => {
-      socket.off("voice-call-comming", handleIncomingVideoCall);
+      socket.off("audio-call-comming", handleIncomingVoiceCall);
     };
   }, [navigate, location.pathname]);
 

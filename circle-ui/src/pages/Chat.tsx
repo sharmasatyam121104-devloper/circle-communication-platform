@@ -1,4 +1,4 @@
-import { ArrowBigLeft, ArrowUpRight, MessageCircleDashed } from "lucide-react"
+import { ArrowBigLeft, ArrowUpRight, MessageCircleDashed, PhoneOff } from "lucide-react"
 import Avatar from "../Components/ui/Avtar"
 import Button from "../Components/ui/Button"
 import Logo from "../Components/ui/Logo"
@@ -21,6 +21,7 @@ import ChatAttachment from "../Components/chats/ChatAttachment"
 import UploadProgressBar from "../Components/ui/UploadProgressBar"
 import socket from "../lib/socketClient"
 import NotificationPopup from "../Components/ui/NotificationPopup"
+import { toast } from "sonner"
 
 interface LastMessageInterface {
   _id: string;
@@ -105,8 +106,6 @@ const Chat = () => {
       time: "",
   });
   const [showNotification, setShowNotification] = useState(false)
-   
-
 
 
   const sendersData = useMemo(() => {
@@ -261,6 +260,25 @@ const Chat = () => {
       socket.off("online-users");
     };
   }, []);
+
+  const handleOpenCallpage = (callType: "video" | "audio")=>{
+    if(!openUserId){
+      return null
+    }
+    const isUserOnline = onlineUsers.includes(openUserId)
+
+    if (!isUserOnline) {
+      return toast.warning(
+        "User is offline. Calls can only be placed when the user is online.",
+        {
+          icon: <PhoneOff size={18} />,
+          closeButton: true,
+        }
+      );
+    }
+
+    navigate(`/${callType}-call/${openChatId}`)
+  }
   
 
   if(allChatsLoading){
@@ -493,15 +511,21 @@ return (
               </div>
             </div>
 
-            <div className="flex gap-3 lg:gap-5 justify-center items-center">
-              <Link to={`/video-call/${openChatId}`} className="text-3xl lg:text-4xl hover:text-green-400 active:scale-75 cursor-pointer">
-                <MdOutlineVideoCall />
-              </Link>
+          <div className="flex gap-3 lg:gap-5 justify-center items-center">
+            <button
+              onClick={()=>handleOpenCallpage("video")}
+              className={`text-3xl lg:text-4xl hover:text-green-400 active:scale-75 cursor-pointer`}
+            >
+              <MdOutlineVideoCall />
+            </button>
 
-              <Link to={`/audio-call/${openChatId}`} className="text-2xl lg:text-3xl hover:text-green-400 active:scale-75 cursor-pointer">
-                <IoCallOutline />
-              </Link>
-            </div>
+            <button
+              onClick={()=>handleOpenCallpage("audio")}
+              className={`text-2xl lg:text-4xl hover:text-green-400 active:scale-75 cursor-pointer`}
+            >
+              <IoCallOutline />
+            </button>
+          </div>
           </div>
 
           {/* Messages */}
