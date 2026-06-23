@@ -8,6 +8,7 @@ dotenv.config();
 import connectDb from './config/db';
 connectDb();
 
+import "./config/redis.config";
 
 const PORT = process.env.PORT || 8080;
 
