@@ -51,8 +51,6 @@ interface ParticipantInterface {
 
 
 
-const server = import.meta.env.VITE_SERVER;
-
 const MessageArea = ({openChatId, openChatUser, addMessageInChat, joinChat, setJoinChat, sendersData}: MessageAreaProps) => {
 
     const [allMessageOfChat, setAllMessgaeOfChat] = useState<MessageInterface[]>([])
@@ -297,7 +295,7 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat, joinChat, setJ
                                 <SenderMessage
                                     message={item.text}
                                     time={new Date(item.updatedAt).toLocaleString()}
-                                    avatar={`${server}${openChatUser?.profile_picture_url}`}
+                                    avatar={`${openChatUser?.profile_picture_url}`}
                                     attachment={
                                         item.attachment
                                             ? {
@@ -320,7 +318,7 @@ const MessageArea = ({openChatId, openChatUser, addMessageInChat, joinChat, setJ
                     name={notification.fullname}
                     message={notification.message}
                     time={notification.time}
-                    profileImage={`${server}${notification.profile_picture_url}`}
+                    profileImage={`${notification.profile_picture_url}`}
                     onClick={() => {
                         navigate(`/chat/${notification._id}`);
                         setShowNotification(false);

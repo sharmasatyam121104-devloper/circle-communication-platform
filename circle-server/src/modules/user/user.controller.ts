@@ -10,6 +10,7 @@ import UserModel from "./user.model";
 import { catchError, tryError } from "../../utils/serverErrorHandler";
 import { generateAccessToken } from "../../utils/jwt";
 import { SessionInterface } from "./user.interface";
+import cloudinary from "../../config/cloudinary.config";
 
 export const signup = async(req: Request, res: Response)=>{
     try {
@@ -111,58 +112,94 @@ export const logout = async(req: SessionInterface, res: Response)=>{
 }
 
 
-export const profile_picture = async(req: SessionInterface, res: Response)=>{
-    try {
-        const id = req.id?.toString()
 
-        if(!id){
-            throw tryError("Id not found.", 404)
-        }
+export const profile_picture = async (
+  req: SessionInterface,
+  res: Response
+) => {
+  try {
+    const id = req.id?.toString();
 
-        if (!req.file) {
-            throw tryError("Image is required", 400)
-        }
-
-        //idhar pe queue system lagega
-        const uploadDir  = "src/uploads/profile-picture";
-
-        if (!fs.existsSync(uploadDir)) {
-
-            fs.mkdirSync(
-                uploadDir,
-                {
-                    recursive: true,
-                }
-            );
-        }
-
-        const fileName = `${id}.webp`;
-
-        const outputPath = path.join(uploadDir, fileName );
-
-        await sharp(req.file.path)
-
-        .resize(300, 300)
-
-        .webp({ quality: 70,})
-
-        .toFile(outputPath);
-
-        const profile_picture =`/profile-picture/${fileName}`;
-
-        if (fs.existsSync(req.file.path)) {
-            fs.unlinkSync(req.file.path);
-        }
-
-        await UserModel.findByIdAndUpdate(id, { profile_picture_url: profile_picture })
-
-        return res.status(200).json({message: "Profile image updated successfully."})
-
-    } 
-    catch (error) {
-        return catchError(error, res, "Error in profile_picture, Please try after sometime.")
+    if (!id) {
+      throw tryError("Id not found.", 404);
     }
-}
+
+    if (!req.file) {
+      throw tryError("Image is required", 400);
+    }
+
+    const uploadDir = "src/uploads/profile-picture";
+
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, {
+        recursive: true,
+      });
+    }
+
+    const fileName = `${id}.webp`;
+
+    const outputPath = path.join(
+      uploadDir,
+      fileName
+    );
+
+    // Compress image
+    await sharp(req.file.path)
+      .resize(300, 300)
+      .webp({
+        quality: 70,
+      })
+      .toFile(outputPath);
+
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(
+      outputPath,
+      {
+        folder: "circle/profile-picture",
+        public_id: id,
+        overwrite: true,
+        resource_type: "image",
+      }
+    );
+
+    // Save Cloudinary URL in DB
+    await UserModel.findByIdAndUpdate(
+      id,
+      {
+        profile_picture_url:
+          result.secure_url,
+      }
+    );
+
+    // Delete local files
+    if (
+      req.file.path &&
+      fs.existsSync(req.file.path)
+    ) {
+      fs.unlinkSync(req.file.path);
+    }
+
+    if (
+      fs.existsSync(outputPath)
+    ) {
+      fs.unlinkSync(outputPath);
+    }
+
+    return res.status(200).json({
+      message:
+        "Profile image updated successfully.",
+      profile_picture_url:
+        result.secure_url,
+    });
+
+  } catch (error) {
+    return catchError(
+      error,
+      res,
+      "Error in profile_picture, Please try after sometime."
+    );
+  }
+};
 
 export const refreshToken = async(req: Request, res: Response)=>{
     try {

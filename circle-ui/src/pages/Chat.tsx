@@ -63,8 +63,6 @@ export interface MessageInterface {
     updatedAt: string
 }
 
-const server = import.meta.env.VITE_SERVER;
-
 
 const Chat = () => {
   const navigate = useNavigate();
@@ -75,6 +73,7 @@ const Chat = () => {
 
   const [isAddMemberInChatModalOpen, setIsAddMemberInChatModalOpen] = useState(false)
   const [allChats, setAllChats] = useState<ChatInterface[]>([])
+  console.log(allChats);
   const [allChatsLoading, setAllChatsLoading ] = useState(false)
   const [openChatUser , setOpenChatUser] = useState<ParticipantInterface | null>(null)
   const [openChatId, setOpenChatId] = useState("")
@@ -84,7 +83,7 @@ const Chat = () => {
   const [sendMessageLoading, setSendMessageLoading] = useState(false)
 
   const user = useAuthStore((state)=>state.user)
-  const userImageUrl = `${server}${user?.data?.profile_picture_url}?t=${user?.data?.updatedAt}`;
+  const userImageUrl = `${user?.data?.profile_picture_url}?t=${user?.data?.updatedAt}`;
 
   const openUserId = location.pathname.split("/").pop()
 
@@ -310,7 +309,7 @@ return (
               {/* Profile Section */}
               <div className="flex items-center gap-3">
                 <img
-                  src={`${server}${user?.data?.profile_picture_url}` || ""}
+                  src={`${user?.data?.profile_picture_url}` || ""}
                   alt="profile"
                   className="w-12 h-12 rounded-full object-cover border border-zinc-700"
                 />
@@ -402,7 +401,7 @@ return (
                     ? (newLastMessage ?? items.lastMessage?.text)
                     : (items.lastMessage?.text || "No messages yet")
                 }
-                avatar={`${server}${otherParticipant?.profile_picture_url}?v=${otherParticipant?.updatedAt}`}
+                avatar={`${otherParticipant?.profile_picture_url}?v=${otherParticipant?.updatedAt}`}
                 isOnline={onlineUsers.includes(otherParticipant?._id || "")}
                 onClick={() => {
                   navigate(`/chat/${otherParticipant?._id}`);
@@ -476,7 +475,7 @@ return (
             </Link>
 
             <div className="flex items-center gap-3 min-w-0">
-              <Avatar src={`${server}${openChatUser?.profile_picture_url}`} />
+              <Avatar src={`${openChatUser?.profile_picture_url}`} />
 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
@@ -629,7 +628,7 @@ return (
                     name={notification.fullname}
                     message={notification.message}
                     time={notification.time}
-                    profileImage={`${server}${notification.profile_picture_url}`}
+                    profileImage={`$${notification.profile_picture_url}`}
                     onClick={() => {
                         navigate(`/chat/${notification._id}`);
                         setShowNotification(false);

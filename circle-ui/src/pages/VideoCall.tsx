@@ -51,12 +51,8 @@ interface AnswerPayloadInterface {
 }
 
 
-
 type CallType = "pending" | "calling" | "incoming" | "talking" | "end"
 
-// type AudioSrcType = "/call-ring.mp3" |  "/start-ring.mp3" |  "/call-end.mp3"
-
-const server = import.meta.env.VITE_SERVER;
 
 const config = {
   iceServers: [
@@ -662,7 +658,7 @@ useEffect(() => {
             {(!isRemoteStreamStart || callEnd ) && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                 <img
-                  src={`${server}${remoteUser?.profile_picture_url}`}
+                  src={`${remoteUser?.profile_picture_url}`}
                   alt={remoteUser?.fullname}
                   className="w-24 h-24 rounded-full object-cover border-4 border-white"
                 />
@@ -694,7 +690,7 @@ useEffect(() => {
             {!isMediaActive && (
               <div className="flex flex-col items-center justify-center gap-2">
                 <img
-                  src={`${server}${user?.data?.profile_picture_url}`}
+                  src={`${user?.data?.profile_picture_url}`}
                   alt={user?.data?.fullname}
                   className="w-24 h-24 rounded-full object-cover border-4 border-white"
                 />

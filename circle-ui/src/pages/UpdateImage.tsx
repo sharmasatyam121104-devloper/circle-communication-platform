@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { useState } from "react";
 import useAuthStore from "../store/useAuthStore";
 
-const server = import.meta.env.VITE_SERVER;
 
 const UpdateImage = () => {
   const navigate = useNavigate();
@@ -81,7 +80,7 @@ const UpdateImage = () => {
             <img
               src={
                 previewImage ||
-                `${server}${user?.data?.profile_picture_url}`
+                `${user?.data?.profile_picture_url}`
               }
               alt="Profile"
               className="h-full w-full object-cover"

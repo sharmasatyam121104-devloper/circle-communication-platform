@@ -45,7 +45,6 @@ interface AnswerPayloadInterface {
   from: string;
 }
 
-const SERVER = import.meta.env.VITE_SERVER
 
 const config = {
   iceServers: [
@@ -482,7 +481,7 @@ const AudioCall = () => {
       <div className="flex-1 flex flex-col items-center justify-center">
 
         <img
-          src={`${SERVER}${remoteUser?.profile_picture_url}`}
+          src={`${remoteUser?.profile_picture_url}`}
           alt={remoteUser?.fullname}
           className="w-40 h-40 rounded-full object-cover border-4 border-white shadow-lg"
         />
