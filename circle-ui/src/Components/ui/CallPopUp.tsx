@@ -8,6 +8,7 @@ interface CallPopupProps {
   receiverName?: string;
   type: CallType;
   direction?: "incoming" | "outgoing";
+  isBusy?: boolean;
 
   position?: "top-left" | "top-right" | "bottom-left" | "bottom-right" | "center";
 
@@ -30,23 +31,61 @@ const CallPopup = ({
   receiverName,
   type,
   direction = "incoming",
+  isBusy = false,
   position = "bottom-right",
   onAccept,
   onReject,
   onClose,
 }: CallPopupProps) => {
-
-
   if (!open) return null;
+
+  if (isBusy) {
+    return (
+      <div className={`fixed z-50 ${positionClasses[position]} w-80`}>
+        <div className="bg-white border border-gray-200 shadow-xl rounded-2xl p-4">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-sm font-semibold text-red-600">
+              Call Declined
+            </h3>
+
+            <button
+              onClick={onClose}
+              className="p-1 rounded-full hover:bg-gray-200 active:scale-75"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          <div className="flex flex-col items-center text-center py-2">
+            <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-3">
+              <PhoneOff size={24} className="text-red-600" />
+            </div>
+
+            <p className="font-semibold text-gray-800 capitalize">
+              {receiverName}
+            </p>
+
+            <p className="text-sm text-gray-500 mt-1">
+              is currently busy on another call
+            </p>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="w-full mt-4 bg-gray-100 hover:bg-gray-200 py-2 rounded-lg font-medium"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
       className={`fixed z-50 ${positionClasses[position]} w-80`}
     >
-      {/* Card */}
       <div className="bg-white border border-gray-200 shadow-xl rounded-2xl p-4 ">
-
-        {/* Header */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             {type === "video" ? (
@@ -82,7 +121,6 @@ const CallPopup = ({
           </div>
         </div>
 
-        {/* Info */}
         <div className="text-sm text-gray-700 mb-3">
           {direction === "incoming" ? (
             <>
@@ -97,14 +135,11 @@ const CallPopup = ({
           )}
         </div>
 
-        {/* Ring animation */}
         <div className="flex justify-center mb-3">
-          <div className="w-3 h-3 bg-indigo-500 rounded-full "></div>
+          <div className="w-3 h-3 bg-indigo-500 rounded-full"></div>
         </div>
 
-        {/* Buttons */}
         <div className="flex justify-between gap-3">
-
           {direction === "incoming" ? (
             <>
               <button
@@ -132,7 +167,6 @@ const CallPopup = ({
               Cut Call
             </button>
           )}
-
         </div>
       </div>
     </div>

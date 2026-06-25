@@ -1,5 +1,6 @@
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
+import redis from "../../config/redis.config";
 
 const VideoCallSocket = (io: Server)=>{
     try {
@@ -29,22 +30,24 @@ const VideoCallSocket = (io: Server)=>{
             });
 
             
-            socket.on("send-offer", ({ offer, roomId, to, callerName }) => {
-                socket.to(to).emit("video-call-comming", {chatId: roomId})
-                setTimeout(()=>{
-                    socket.to(roomId).emit("accept-offer", {
-                    offer,
-                    from: socket.data.userId,
-                    callerName
-                });
-                },200)
-            });
+            socket.on("send-offer", async({ offer, roomId, to, callerName }) => {
 
-            socket.on("send-candidate", ({candidate, roomId})=>{
-                socket.to(roomId).emit("accept-candidate",{
-                    candidate,
-                    from: socket.data.userId, 
-                })              
+
+                const isBusy = await redis.sismember("busy-users", to);
+
+                if (isBusy) {
+                    return socket.emit("remote-user-busy");
+                }
+
+                socket.to(to).emit("video-call-comming", {chatId: roomId})
+
+                setTimeout(()=>{
+                        socket.to(roomId).emit("accept-offer", {
+                        offer,
+                        from: socket.data.userId,
+                        callerName
+                    });
+                },800)
             });
 
             socket.on("send-answer", ({answer, roomId})=>{
@@ -54,8 +57,22 @@ const VideoCallSocket = (io: Server)=>{
                 })
             })
 
-            socket.on("send-end-call", ({roomId})=>{
+            socket.on("send-candidate", ({candidate, roomId})=>{
+                socket.to(roomId).emit("accept-candidate",{
+                    candidate,
+                    from: socket.data.userId, 
+                })              
+            });
+
+            socket.on("busy-user", async ({ id, to }) => {
+                await redis.sadd("busy-users", id);
+                await redis.sadd("busy-users", to);
+            });
+
+            socket.on("send-end-call", async({roomId, to})=>{
                 socket.to(roomId).emit("accept-end-call")
+                await redis.srem("busy-users", socket.data.userId);
+                await redis.srem("busy-users", to);
             })
         })
     } 

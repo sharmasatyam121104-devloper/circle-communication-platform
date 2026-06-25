@@ -51,7 +51,7 @@ interface AnswerPayloadInterface {
 }
 
 
-type CallType = "pending" | "calling" | "incoming" | "talking" | "end"
+type CallType = "pending" | "user-busy" |  "calling" | "incoming" | "talking" | "end"
 
 
 const config = {
@@ -87,6 +87,7 @@ const VideoCall = () => {
   const [chatDataError, setChatDataError] = useState<Error | null>(null)
   const user = useAuthStore((state)=>state.user)
   const remoteUser = chatData?.participants.find((participant) => participant._id !== user?.data._id);
+  console.log("kkdkd", remoteUser?._id);
 
 
   const navigate = useNavigate()
@@ -106,6 +107,8 @@ const VideoCall = () => {
   const [videoCallStatus, setVideoCallStatus] = useState<CallType>("pending")
 
   const [offerPayload, setOfferPayload] = useState<OfferPayloadInterface | null>(null)
+
+  const [isRemoteUserBussy, setIsRemoteUserBusy] = useState<boolean>(false)
 
 
   const toggleScreen = async () => {
@@ -337,7 +340,6 @@ const VideoCall = () => {
 
       const rtc = webRtcRef.current
       if(!rtc) return console.log("rtc not found");
-
       const offer = await rtc.createOffer()
       await rtc.setLocalDescription(offer)
       setVideoCallStatus("calling")
@@ -382,7 +384,8 @@ const VideoCall = () => {
       await webRtcRef.current.setLocalDescription(answer)
 
       socket.emit("send-answer", {answer, roomId: chatId})
-
+      socket.emit("busy-user", {id: user?.data._id, to: remoteUser?._id})
+      
       setVideoCallStatus("talking")
       setIsCallNotifiactionOpen(false)
       setIsRemoteStreamStart(true)
@@ -397,7 +400,7 @@ const VideoCall = () => {
     try {
       setVideoCallStatus("end")
       setIsCallNotifiactionOpen(false)
-      socket.emit("send-end-call", {roomId: chatId})
+      socket.emit("send-end-call", {roomId: chatId, to: remoteUser?._id})
       endStreaming()
       setOpenModal(true)
     } 
@@ -433,6 +436,10 @@ const VideoCall = () => {
       setIsCallNotifiactionOpen(false)
       endStreaming()
       setOpenModal(true)
+        socket.emit("send-end-call", {
+          roomId: chatId,
+          to: remoteUser?._id
+        });
     } 
     catch (error) {
       return clientCatchError(error)  
@@ -455,6 +462,7 @@ const VideoCall = () => {
       }
       const candidate = new RTCIceCandidate(payload.candidate)
       await webRtcRef.current.addIceCandidate(candidate)
+      socket.emit("busy-user", {id: user?.data._id, to: remoteUser?._id})
     } 
     catch (error) {
       return clientCatchError(error)
@@ -466,29 +474,40 @@ const VideoCall = () => {
         if(!webRtcRef.current){
           return
         }
-      const answer = new RTCSessionDescription(payload.answer)
-      await webRtcRef.current.setRemoteDescription(answer)
-      setVideoCallStatus("talking")
-      setIsCallNotifiactionOpen(false)
+        const answer = new RTCSessionDescription(payload.answer)
+        await webRtcRef.current.setRemoteDescription(answer)
+        setVideoCallStatus("talking")
+        setIsCallNotifiactionOpen(false)
     } 
     catch (error) {
       return clientCatchError(error)  
     }
   }
 
-
+  const onRemoteUserBusy = async()=>{
+    try {
+      console.log("remote bussy");
+      setIsRemoteUserBusy(true)
+      setVideoCallStatus("user-busy")
+    } 
+    catch (error) {
+      return clientCatchError(error)  
+    }
+  }
 
   useEffect(()=>{
     socket.on("accept-offer", onAcceptOffer)
     socket.on("accept-candidate", onAcceptCandidate)
     socket.on("accept-answer", onAcceptAnswer)
     socket.on("accept-end-call", onAcceptEndCall)
+    socket.on("remote-user-busy", onRemoteUserBusy)
 
     return ()=>{
       socket.off("accept-offer", onAcceptOffer)
       socket.off("accept-candidate", onAcceptCandidate)
       socket.off("accept-answer", onAcceptAnswer)
       socket.off("accept-end-call", onAcceptEndCall)
+      socket.off("remote-user-busy", onRemoteUserBusy)
     }
   },[])
 
@@ -504,26 +523,27 @@ const VideoCall = () => {
     };
   }, [chatId]);
 
-useEffect(() => {
-  const handleBeforeUnload = () => {
-    if (
-      videoCallStatus === "calling" ||
-      videoCallStatus === "incoming" ||
-      videoCallStatus === "talking"
-    ) {
-      socket.emit("send-end-call", {
-        roomId: chatId,
-      });
-      endStreaming();
-    }
-  };
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (
+        videoCallStatus === "calling" ||
+        videoCallStatus === "incoming" ||
+        videoCallStatus === "talking"
+      ) {
+        socket.emit("send-end-call", {
+          roomId: chatId,
+          to: remoteUser?._id
+        });
+        endStreaming();
+      }
+    };
 
-  window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("beforeunload", handleBeforeUnload);
 
-  return () => {
-    window.removeEventListener("beforeunload", handleBeforeUnload);
-  };
-}, [videoCallStatus, chatId]);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [videoCallStatus, chatId]);
 
   useEffect(()=>{
 
@@ -537,9 +557,17 @@ useEffect(() => {
       audioRef.current = new Audio()
     }
 
-    if(videoCallStatus === "calling") {
+    if(videoCallStatus === "calling" && !isRemoteUserBussy) {
       audioRef.current.pause()
       audioRef.current.src = "/call-ring.mp3"
+      audioRef.current.currentTime = 0
+      audioRef.current.load()
+      audioRef.current.play()
+    }
+
+    if(videoCallStatus === "user-busy" && isRemoteUserBussy) {
+      audioRef.current.pause()
+      audioRef.current.src = "/call-busy.mp3"
       audioRef.current.currentTime = 0
       audioRef.current.load()
       audioRef.current.play()
@@ -569,6 +597,8 @@ useEffect(() => {
       audioRef.current.load()
       audioRef.current.play()
     }
+
+  
 
     return()=>{
       if(audioRef.current){
@@ -765,12 +795,16 @@ useEffect(() => {
           <div className="fixed inset-0 z-40 bg-black/40 pointer-events-auto">
             <div className="relative z-50">
               <CallPopup
-                onClose={()=>setIsCallNotifiactionOpen(false)}
+                onClose={() => {
+                  setIsCallNotifiactionOpen(false);
+                  setOpenModal(true);
+                }}
                 open={callOpen}
                 callerName={callerName}
                 receiverName={receiverName}
                 type={callType}
                 direction={callDirection}
+                isBusy={isRemoteUserBussy}
                 onAccept={acceptCall}
                 onReject={endCall}
               />
