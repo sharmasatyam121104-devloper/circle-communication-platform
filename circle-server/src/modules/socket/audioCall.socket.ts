@@ -1,5 +1,6 @@
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
+import redis from "../../config/redis.config";
 
 const AudioCallSocket = (io: Server)=>{
     try {
@@ -28,7 +29,14 @@ const AudioCallSocket = (io: Server)=>{
                 socket.join(roomId);
             });
 
-            socket.on("audio-send-offer", ({ offer, to, roomId, callerName }) => {
+            socket.on("audio-send-offer", async({ offer, to, roomId, callerName }) => {
+
+                const isBusy = await redis.sismember("busy-users", to);
+
+                if (isBusy) {
+                    return socket.emit("remote-user-busy");
+                }
+
                 socket.to(to).emit("audio-call-comming", {chatId: roomId})
                 setTimeout(()=>{
                     socket.to(roomId).emit("audio-accept-offer", {
@@ -46,6 +54,11 @@ const AudioCallSocket = (io: Server)=>{
                 })              
             });
 
+            socket.on("busy-user", async ({ id, to }) => {
+                await redis.sadd("busy-users", id);
+                await redis.sadd("busy-users", to);
+            });
+
             socket.on("audio-send-answer", ({answer, roomId})=>{
                 socket.to(roomId).emit("audio-accept-answer",{
                     answer,
@@ -53,8 +66,10 @@ const AudioCallSocket = (io: Server)=>{
                 })
             })
 
-            socket.on("audio-send-end-call", ({roomId})=>{
+            socket.on("audio-send-end-call", async({roomId, to})=>{
                 socket.to(roomId).emit("audio-accept-end-call")
+                await redis.srem("busy-users", socket.data.userId);
+                await redis.srem("busy-users", to);
             })
         })
     } 

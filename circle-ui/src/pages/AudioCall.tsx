@@ -60,7 +60,7 @@ const config = {
   ],
 };
 
-type CallType = "pending" | "calling" | "incoming" | "talking" | "end"
+type CallType = "pending" | "calling" | "user-busy" | "incoming" | "talking" | "end"
 
 const AudioCall = () => {
   const [openModal, setOpenModal] = useState(false)
@@ -98,6 +98,8 @@ const AudioCall = () => {
   const [audioCallStatus, setAuidoCallStatus] = useState<CallType>("pending")
 
   const [offerPayload, setOfferPayload] = useState<OfferPayloadInterface | null>(null)
+
+    const [isRemoteUserBussy, setIsRemoteUserBusy] = useState<boolean>(false)
 
 
   const stopAudio = () => {
@@ -268,7 +270,7 @@ const AudioCall = () => {
     try {
       setAuidoCallStatus("end")
       setIsCallNotifiactionOpen(false)
-      socket.emit("audio-send-end-call", {roomId: chatId})
+      socket.emit("audio-send-end-call", {roomId: chatId, to: remoteUser?._id})
       endStreaming()
       setOpenModal(true)
     } 
@@ -343,17 +345,30 @@ const AudioCall = () => {
     }
   }
 
+  const onRemoteUserBusy = async()=>{
+    try {
+      console.log("remote bussy");
+      setIsRemoteUserBusy(true)
+      setAuidoCallStatus("user-busy")
+    } 
+    catch (error) {
+      return clientCatchError(error)  
+    }
+  }
+
   useEffect(()=>{
     socket.on("audio-accept-offer", onAcceptOffer)
     socket.on("audio-accept-candidate", onAcceptCandidate)
     socket.on("audio-accept-answer", onAcceptAnswer)
     socket.on("audio-accept-end-call", onAcceptEndCall)
+    socket.on("remote-user-busy", onRemoteUserBusy)
 
     return ()=>{
       socket.off("audio-accept-offer", onAcceptOffer)
       socket.off("audio-accept-candidate", onAcceptCandidate)
       socket.off("audio-accept-answer", onAcceptAnswer)
       socket.off("audio-accept-end-call", onAcceptEndCall)
+      socket.off("remote-user-busy", onRemoteUserBusy)
     }
   },[])
 
@@ -388,8 +403,11 @@ const AudioCall = () => {
       audioRef.current = new Audio()
     }
 
-    if(audioCallStatus === "calling") {
+    if(audioCallStatus === "calling" && !isRemoteUserBussy) {
       playAudio("/call-ring.mp3")
+    }
+    if(audioCallStatus === "user-busy" && isRemoteUserBussy) {
+      playAudio('/busy-ring.mp3')
     }
 
     if(audioCallStatus === "incoming") {
@@ -553,6 +571,7 @@ const AudioCall = () => {
               <CallPopup
                 onClose={() => {
                   setIsCallNotifiactionOpen(false);
+                  setOpenModal(true)
                   stopAudio();
                 }}
                 open={callOpen}
@@ -563,6 +582,7 @@ const AudioCall = () => {
                 position={"top-right"}
                 onAccept={acceptCall}
                 onReject={endCall}
+                isBusy={isRemoteUserBussy}
               />
             </div>
           </div>
