@@ -103,7 +103,6 @@ export const logout = async(req: SessionInterface, res: Response)=>{
 }
 
 
-
 export const profile_picture = async (req: SessionInterface,res: Response) => {
   try {
     const id = req.id?.toString();
@@ -233,7 +232,6 @@ export const getMe = async(req: SessionInterface, res: Response)=>{
         return catchError(error, res, "Error in refreshToken, Please try some time later.")    
     }
 }
-
 
 
 export const googleCallback = async (req: any, res: any) => {
