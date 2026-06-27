@@ -11,6 +11,7 @@ import { catchError, tryError } from "../../utils/serverErrorHandler";
 import { generateAccessToken } from "../../utils/jwt";
 import { SessionInterface } from "./user.interface";
 import cloudinary from "../../config/cloudinary.config";
+import { setAccessAndRefreshToken } from "./utils/cookies.utils";
 
 export const signup = async(req: Request, res: Response)=>{
     try {
@@ -60,23 +61,13 @@ export const login = async(req: Request, res: Response)=>{
 
         const access_token =  generateAccessToken(isUserExists._id)
         const refresh_token =  crypto.randomBytes(64).toString("hex")
+        const refresh_token_hash = crypto.createHash("sha256").update(refresh_token).digest("hex");
+
         const last_login = Date.now()
 
-        res.cookie("access_token", access_token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "dev" || process.env.NODE_ENV === "development" ? false : true,
-            sameSite: "lax",
-            maxAge: Number(process.env.ACCESS_TOKEN_EXPIRES)
-        })
+        setAccessAndRefreshToken(res, access_token, refresh_token);
 
-        res.cookie("refresh_token", refresh_token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "dev" || process.env.NODE_ENV === "development" ? false : true,
-            sameSite: "lax",
-            maxAge: Number(process.env.REFRESH_TOKEN_EXPIRES)
-        })
-
-        await UserModel.findOneAndUpdate({_id: isUserExists._id}, {last_login, refresh_token},{ returnDocument: "after"}) 
+        await UserModel.findOneAndUpdate({_id: isUserExists._id}, {last_login, refresh_token: refresh_token_hash},{ returnDocument: "after"}) 
 
         return res.status(200).json({message: "User login sucessfully"})
 
@@ -113,10 +104,7 @@ export const logout = async(req: SessionInterface, res: Response)=>{
 
 
 
-export const profile_picture = async (
-  req: SessionInterface,
-  res: Response
-) => {
+export const profile_picture = async (req: SessionInterface,res: Response) => {
   try {
     const id = req.id?.toString();
 
@@ -203,26 +191,26 @@ export const profile_picture = async (
 
 export const refreshToken = async(req: Request, res: Response)=>{
     try {
-        const refresh_token = req.cookies?.refresh_token
+        let refresh_token = req.cookies?.refresh_token
         if(!refresh_token){
             throw tryError("Refresh token expired.", 400)
         }
 
-        const user = await UserModel.findOne({refresh_token})
+        let refresh_token_hash = crypto.createHash("sha256").update(refresh_token).digest("hex");
+
+        const user = await UserModel.findOne({refresh_token: refresh_token_hash})
 
         if(!user){
             throw tryError("Unauthorized Access", 401)
         }
 
         const access_token =  generateAccessToken(user._id)
+        refresh_token =  crypto.randomBytes(64).toString("hex")
+        refresh_token_hash = crypto.createHash("sha256").update(refresh_token).digest("hex");
 
-        res.cookie("access_token", access_token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "dev" || process.env.NODE_ENV === "development" ? false : true,
-            sameSite: "lax",
-            maxAge: Number(process.env.ACCESS_TOKEN_EXPIRES)
-        })
+        setAccessAndRefreshToken(res, access_token, refresh_token);
 
+        await UserModel.findByIdAndUpdate(user._id, {refresh_token: refresh_token_hash})
         return res.status(200).json({message: "Access token generated successfully."})
 
     } 
@@ -269,27 +257,14 @@ export const googleCallback = async (req: any, res: any) => {
 
         const access_token =  generateAccessToken(user._id)
         const refresh_token =  crypto.randomBytes(64).toString("hex")
+        const refresh_token_hash = crypto.createHash("sha256").update(refresh_token).digest("hex");
 
         user.last_login = new Date();
-        user.refresh_token = refresh_token;
+        user.refresh_token = refresh_token_hash;
         await user.save();
 
+        setAccessAndRefreshToken(res, access_token, refresh_token);
 
-        res.cookie("access_token", access_token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "dev" || process.env.NODE_ENV === "development" ? false : true,
-            sameSite: "lax",
-            maxAge: Number(process.env.ACCESS_TOKEN_EXPIRES)
-        })
-
-        res.cookie("refresh_token", refresh_token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "dev" || process.env.NODE_ENV === "development" ? false : true,
-            sameSite: "lax",
-            maxAge: Number(process.env.REFRESH_TOKEN_EXPIRES)
-        })
-
-        // 6. redirect frontend
         return res.redirect(`${process.env.CLIENT_URL}/chat`);
     } 
     catch (error) {
