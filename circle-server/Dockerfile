@@ -24,6 +24,6 @@ RUN npm ci --omit=dev
 
 COPY --from=builder /circle-api/dist ./dist
 
-EXPOSE 8080
+EXPOSE 8000
 
 CMD ["npm", "start"]

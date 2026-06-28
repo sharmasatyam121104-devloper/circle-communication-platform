@@ -32,18 +32,21 @@ jobs:
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/circle-api:latest
 
-      - name: Copy Docker Compose File
+      - name: Copy Docker Compose
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SECRET }}
+
           source: "circle-server/docker-compose.yml"
-          target: "/home/ubuntu/circle-api"
+
+          target: "/home/ubuntu"
+
           strip_components: 1
           overwrite: true
 
-      - name: Deploy on EC2
+      - name: Deploy
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -52,9 +55,10 @@ jobs:
           script: |
             mkdir -p ~/circle-api
 
+            mv ~/docker-compose.yml ~/circle-api/docker-compose.yml
+
             cd ~/circle-api
 
-            ls -la
-
             docker compose pull
-            docker compose up -d
+
+            docker compose up -d --remove-orphans
