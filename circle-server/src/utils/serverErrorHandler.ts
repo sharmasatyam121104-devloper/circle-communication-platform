@@ -12,8 +12,7 @@ export const tryError = (message: string, status: number) => {
 
 export const catchError = (
   error: unknown,
-  res: Response,
-  prodMessage: string = "Internal Server Error"
+  res: Response
 ) => {
   const isDev = process.env.NODE_ENV === "development";
 
@@ -23,19 +22,20 @@ export const catchError = (
     const response: any = {
       success: false,
       status,
-      message: isDev ? error.message : prodMessage,
+      message: error.message, // ALWAYS show real message
     };
 
-    // ONLY in development
+    // ONLY DEV DEBUG INFO
     if (isDev && error.stack) {
       const stackLines = error.stack
         .split("\n")
         .filter(
           (line) =>
-            !line.includes("node_modules") && line.trim() !== ""
+            !line.includes("node_modules") &&
+            line.trim() !== ""
         );
 
-      response.stack = stackLines.map((line) => line.trim());
+      response.stack = stackLines.map((l) => l.trim());
 
       const locationLine =
         stackLines.find(
@@ -55,10 +55,9 @@ export const catchError = (
     return res.status(status).json(response);
   }
 
-  // unknown error fallback
   return res.status(500).json({
     success: false,
     status: 500,
-    message: isDev ? String(error) : prodMessage,
+    message: isDev ? String(error) : "Internal Server Error",
   });
 };
