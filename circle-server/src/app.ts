@@ -20,7 +20,8 @@ app.use(cookieParser())
 app.use(helmetConfig);
 app.use(logger);
 app.use(passport.initialize());
-app.use("/profile-picture", express.static("src/uploads/profile-picture"));
+import path from "path";
+app.use("/profile-picture", express.static(path.join(process.cwd(), "uploads", "profile-picture")));
 
 import "./config/passport.config";
 
