@@ -39,7 +39,7 @@ app.get("/test", (req, res) => {
   res.send("Server Running...");
 });
 
-app.get("/test-v2", (req, res) => {
+app.get("/test-v3", (req, res) => {
   res.send("Server Running...");
 });
 
