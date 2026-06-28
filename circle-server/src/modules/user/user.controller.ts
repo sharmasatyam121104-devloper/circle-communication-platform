@@ -115,12 +115,14 @@ export const profile_picture = async (req: SessionInterface,res: Response) => {
       throw tryError("Image is required", 400);
     }
 
-    const uploadDir = "src/uploads/profile-picture";
+    const uploadDir = path.join(
+    process.cwd(),
+    "uploads",
+    "profile-picture"
+    );
 
     if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, {
-        recursive: true,
-      });
+    fs.mkdirSync(uploadDir, { recursive: true });
     }
 
     const fileName = `${id}.webp`;

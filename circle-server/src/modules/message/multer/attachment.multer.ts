@@ -1,28 +1,37 @@
 import multer from "multer";
 import path from "path";
 import { SessionInterface } from "../../user/user.interface";
+import fs from "fs"
+
+
+const uploadDir = path.join(
+  process.cwd(),
+  "uploads",
+  "attachments"
+);
+
+// Folder automatically create ho jayega
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, {
+    recursive: true,
+  });
+}
 
 const storage = multer.diskStorage({
-
   destination: (req, file, cb) => {
-
-    cb(null, "src/uploads/attachments");
+    cb(null, uploadDir);
   },
 
-  filename: (req: SessionInterface,file,cb) => {
-
+  filename: (
+    req: SessionInterface,
+    file,
+    cb
+  ) => {
     const userId = req.id;
-
     const timestamp = Date.now();
+    const ext = path.extname(file.originalname);
 
-    const ext = path.extname(
-      file.originalname
-    );
-
-    const fileName =
-      `${userId}-${timestamp}${ext}`;
-
-    cb(null, fileName);
+    cb(null, `${userId}-${timestamp}${ext}`);
   },
 });
 
@@ -70,3 +79,4 @@ const uploadAttachment = multer({
 });
 
 export default uploadAttachment;
+
