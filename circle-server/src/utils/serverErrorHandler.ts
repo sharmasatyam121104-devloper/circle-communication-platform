@@ -12,7 +12,8 @@ export const tryError = (message: string, status: number) => {
 
 export const catchError = (
   error: unknown,
-  res: Response
+  res: Response,
+  prodMessage: string = "Internal Server Error"
 ) => {
   const isDev = process.env.NODE_ENV === "development";
 
@@ -22,10 +23,10 @@ export const catchError = (
     const response: any = {
       success: false,
       status,
-      message: error.message, // ALWAYS show real message
+      message: error.message, // real error always
     };
 
-    // ONLY DEV DEBUG INFO
+    // DEV ONLY DEBUG INFO
     if (isDev && error.stack) {
       const stackLines = error.stack
         .split("\n")
@@ -55,9 +56,10 @@ export const catchError = (
     return res.status(status).json(response);
   }
 
+  // ONLY unknown error uses prodMessage fallback
   return res.status(500).json({
     success: false,
     status: 500,
-    message: isDev ? String(error) : "Internal Server Error",
+    message: isDev ? String(error) : prodMessage,
   });
 };
