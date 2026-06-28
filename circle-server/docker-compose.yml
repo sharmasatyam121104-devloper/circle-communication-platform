@@ -1,0 +1,34 @@
+services:
+  backend:
+    image: sharmasatyam121104/circle-api:latest
+    container_name: circle-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - mongodb
+      - redis
+
+  mongodb:
+    image: mongo:8
+    container_name: circle-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  redis:
+    image: redis:8-alpine
+    container_name: circle-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  mongodb_data:
+  redis_data:
