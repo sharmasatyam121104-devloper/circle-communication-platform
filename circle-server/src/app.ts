@@ -39,4 +39,8 @@ app.get("/test", (req, res) => {
   res.send("Server Running...");
 });
 
+app.get("/test-v1", (req, res) => {
+  res.send("Server Running...");
+});
+
 export default server;
