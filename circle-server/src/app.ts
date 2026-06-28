@@ -36,12 +36,9 @@ app.use('/chat', AuthMiddleware, ChatRouter)
 app.use('/message', AuthMiddleware, MessageRoouter)
 
 
-app.get("/test", (req, res) => {
-  res.send("Server Running...");
-});
-
-app.get("/test-v10", (req, res) => {
-  res.send("Server Running...");
-});
+import { homeRoute, notFoundRoute, testRoute } from "./utils/basic.routes";
+app.get("/", homeRoute);
+app.get("/test", testRoute);
+app.use(notFoundRoute);
 
 export default server;
