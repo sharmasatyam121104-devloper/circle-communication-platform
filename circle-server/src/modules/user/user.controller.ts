@@ -122,7 +122,7 @@ export const profile_picture = async (req: SessionInterface,res: Response) => {
     );
 
     if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
+        fs.mkdirSync(uploadDir, { recursive: true });
     }
 
     const fileName = `${id}.webp`;

@@ -10,19 +10,30 @@ export const tryError = (message: string, status: number) => {
   return error;
 };
 
-export const catchError = ( error: unknown, res: Response, prodMessage: string = "Internal Server Error") => {
-    
+export const catchError = (
+  error: unknown,
+  res: Response,
+  prodMessage: string = "Internal Server Error"
+) => {
+  const isDev = process.env.NODE_ENV === "development";
+
   if (error instanceof Error) {
     const status = (error as ErrorMessage).status || 500;
 
-    const message = process.env.NODE_ENV === "development" ? error.message : prodMessage;
+    const response: any = {
+      success: false,
+      status,
+      message: isDev ? error.message : prodMessage,
+    };
 
-    const response: any = { success: false, message, status };
-
-    if (process.env.NODE_ENV === "development" && error.stack) {
+    // ONLY in development
+    if (isDev && error.stack) {
       const stackLines = error.stack
         .split("\n")
-        .filter((line) => !line.includes("node_modules") && line.trim() !== "");
+        .filter(
+          (line) =>
+            !line.includes("node_modules") && line.trim() !== ""
+        );
 
       response.stack = stackLines.map((line) => line.trim());
 
@@ -34,15 +45,20 @@ export const catchError = ( error: unknown, res: Response, prodMessage: string =
             line.trim().startsWith("at")
         ) || "";
 
-      const match = locationLine.match(/\((.*)\)/) || locationLine.match(/at (.*)/);
-      response.location = match ? match[1] : locationLine;
+      const match =
+        locationLine.match(/\((.*)\)/) ||
+        locationLine.match(/at (.*)/);
+
+      response.location = match ? match[1] : undefined;
     }
 
     return res.status(status).json(response);
-  } 
-  else {
-    return res
-      .status(500)
-      .json({ success: false, message: prodMessage, status: 500 });
-    }
+  }
+
+  // unknown error fallback
+  return res.status(500).json({
+    success: false,
+    status: 500,
+    message: isDev ? String(error) : prodMessage,
+  });
 };
