@@ -89,8 +89,17 @@ export const logout = async(req: SessionInterface, res: Response)=>{
 
         await UserModel.findByIdAndUpdate(id, {refresh_token: ""}, { returnDocument: "after" })
 
-        res.clearCookie("access_token");
-        res.clearCookie("refresh_token");
+        res.clearCookie("access_token", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "dev" || process.env.NODE_ENV === "development" ? false : true,
+            sameSite: process.env.NODE_ENV === "dev" || process.env.NODE_ENV === "development" ? "lax" : "none",
+        })
+
+        res.clearCookie("refresh_token", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "dev" || process.env.NODE_ENV === "development" ? false : true,
+            sameSite: process.env.NODE_ENV === "dev" || process.env.NODE_ENV === "development" ? "lax" : "none",
+        })
 
         return res.status(200).json({
             success: true,
