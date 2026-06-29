@@ -407,6 +407,7 @@ return (
                   navigate(`/chat/${otherParticipant?._id}`);
                   setOpenChatId(items._id);
                 }}
+                isOpen={otherParticipant?._id === openUserId ? true : false}
               />
             );
           })}

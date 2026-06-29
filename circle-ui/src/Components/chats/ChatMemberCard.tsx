@@ -6,6 +6,7 @@ type ChatMemberCardProps = {
   avatar?: string;
   unreadCount?: number;
   isOnline?: boolean;
+  isOpen?: boolean;
   onClick?: () => void;
 };
 
@@ -16,37 +17,64 @@ const ChatMemberCard = ({
   unreadCount = 0,
   isOnline = false,
   onClick,
+  isOpen = false
 }: ChatMemberCardProps) => {
   return (
     <div
       onClick={onClick}
-      className="h-16 rounded-2xl bg-slate-800 hover:bg-slate-700 transition-all duration-200 text-white flex items-center gap-3 px-4 cursor-pointer shadow-md mt-1"
+      className={`
+        relative flex items-center gap-3 px-4 h-16 mt-1 rounded-2xl
+        cursor-pointer overflow-hidden
+        border transition-all duration-300
+        ${
+          isOpen
+            ? "bg-gradient-to-r from-indigo-600/25 via-indigo-500/20 to-purple-600/15 border-indigo-500/50 shadow-lg shadow-indigo-500/20 scale-[1.02]"
+            : "bg-slate-800 border-transparent hover:bg-slate-700 hover:border-slate-600"
+        }
+      `}
     >
-      
+      {/* Active Indicator */}
+      {isOpen && (
+        <div className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-indigo-400" />
+      )}
+
       {/* Avatar */}
       <div className="relative shrink-0">
-        <Avatar src={avatar} />
+        <div
+          className={`rounded-full transition-all duration-300 ${
+            isOpen ? "ring-2 ring-indigo-300 ring-offset-1 ring-offset-slate-700" : ""
+          }`}
+        >
+          <Avatar src={avatar} />
+        </div>
 
-        {/* Online Dot */}
         {isOnline && (
-          <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-slate-800" />
+          <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-slate-900 bg-green-500" />
         )}
       </div>
 
       {/* User Info */}
-      <div className="flex-1 overflow-hidden">
-        <h1 className="capitalize font-medium truncate text-[15px]">
+      <div className="min-w-0 flex-1">
+        <h1
+          className={`truncate text-[15px] capitalize transition-colors ${
+            isOpen ? "font-semibold text-white" : "font-medium text-slate-100"
+          }`}
+        >
           {name}
         </h1>
 
-        <p className="text-sm text-gray-400 truncate">
+        <p
+          className={`truncate text-sm ${
+            isOpen ? "text-slate-300" : "text-slate-400"
+          }`}
+        >
           {lastMessage}
         </p>
       </div>
 
-      {/* Unread Count */}
+      {/* Unread */}
       {unreadCount > 0 && (
-        <div className="bg-green-500 min-w-6 h-6 px-1 rounded-full flex justify-center items-center text-xs font-semibold">
+        <div className="flex h-6 min-w-6 items-center justify-center rounded-full bg-indigo-500 px-2 text-xs font-semibold text-white">
           {unreadCount > 99 ? "99+" : unreadCount}
         </div>
       )}
