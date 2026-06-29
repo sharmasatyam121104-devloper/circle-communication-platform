@@ -367,7 +367,9 @@ const VideoCall = () => {
 
   const acceptCall = async()=>{
     try {
-      await toggleVideo()
+      if(!VideoOn && !screenShareOn){
+        await toggleVideo()
+      }
       webRtcConnection()
       if(!offerPayload){
         return console.log("offerPayload not found.");
@@ -516,6 +518,7 @@ const VideoCall = () => {
     if (!chatId) return;
     socket.connect();
     socket.emit("join-room", chatId);
+    toggleVideo()
 
     return () => {
       socket.emit("leave-room", chatId);
