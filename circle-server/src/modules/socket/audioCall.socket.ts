@@ -44,7 +44,7 @@ const AudioCallSocket = (io: Server)=>{
                         from: socket.data.userId,
                         callerName
                     });
-                },200)
+                },800)
             });
 
             socket.on("audio-send-candidate", ({candidate, roomId})=>{
