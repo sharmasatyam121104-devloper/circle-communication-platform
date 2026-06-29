@@ -28,7 +28,7 @@ const ChatMemberCard = ({
         border transition-all duration-300
         ${
           isOpen
-            ? "bg-gradient-to-r from-indigo-600/25 via-indigo-500/20 to-purple-600/15 border-indigo-500/50 shadow-lg shadow-indigo-500/20 scale-[1.02]"
+            ? "bg-linear-to-r from-indigo-500/25 via-indigo-400/20 to-purple-300/15 border-indigo-400/50 shadow-lg shadow-indigo-500/20 my-2 scale-101"
             : "bg-slate-800 border-transparent hover:bg-slate-700 hover:border-slate-600"
         }
       `}
@@ -75,7 +75,7 @@ const ChatMemberCard = ({
       {/* Unread */}
       {unreadCount > 0 && (
         <div className="flex h-6 min-w-6 items-center justify-center rounded-full bg-indigo-500 px-2 text-xs font-semibold text-white">
-          {unreadCount > 99 ? "99+" : unreadCount}
+         {unreadCount > 99 ? "99+" : unreadCount}
         </div>
       )}
     </div>
