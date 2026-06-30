@@ -45,21 +45,6 @@ interface AnswerPayloadInterface {
   from: string;
 }
 
-
-const config = {
-  iceServers: [
-    {
-      urls: [
-        "stun:stun.l.google.com:19302",
-        "stun:stun1.l.google.com:19302",
-        "stun:stun2.l.google.com:19302",
-        "stun:stun3.l.google.com:19302",
-        "stun:stun4.l.google.com:19302",
-      ],
-    },
-  ],
-};
-
 type CallType = "pending" | "calling" | "user-busy" | "incoming" | "talking" | "end"
 
 const AudioCall = () => {
@@ -100,6 +85,34 @@ const AudioCall = () => {
   const [offerPayload, setOfferPayload] = useState<OfferPayloadInterface | null>(null)
 
     const [isRemoteUserBussy, setIsRemoteUserBusy] = useState<boolean>(false)
+
+    const [iceServers, setIceServers] = useState<RTCIceServer[]>([]);
+
+
+    useEffect(() => {
+      const fetchIce = async () => {
+        try {
+          const {data} = await api.get('/twilio')
+          setIceServers(data);
+        } catch (error) {
+          clientCatchError(error)
+          setIceServers([
+            {
+              urls: [
+                "stun:stun.l.google.com:19302",
+                "stun:stun1.l.google.com:19302",
+              ],
+            },
+          ]);
+        }
+      };
+
+      fetchIce();
+    }, []);
+
+    const config = {
+      iceServers
+    };
 
 
   const stopAudio = () => {

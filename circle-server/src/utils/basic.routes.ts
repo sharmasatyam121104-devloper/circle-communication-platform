@@ -14,7 +14,7 @@ export const testRoute = (req: Request, res: Response) => {
   return res.status(200).json({
     success: true,
     route: "TEST",
-    message: "Circle-Server is working fine 2",
+    message: "Circle-Server is working fine.",
   });
 };
 
