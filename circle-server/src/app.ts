@@ -29,11 +29,13 @@ import "./config/passport.config";
 import UserRouter from "./modules/user/user.routes";
 import ChatRouter from "./modules/chat/chat.routes";
 import MessageRoouter from "./modules/message/message.routes";
+import TwilioRouter from "./modules/twilio/twilio.routes";
 import { AuthMiddleware } from "./modules/user/user.middleware";
 
 app.use('/user', UserRouter)
 app.use('/chat', AuthMiddleware, ChatRouter)
 app.use('/message', AuthMiddleware, MessageRoouter)
+app.use('/twilio',AuthMiddleware, TwilioRouter)
 
 
 import { homeRoute, notFoundRoute, testRoute } from "./utils/basic.routes";

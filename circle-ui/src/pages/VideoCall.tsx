@@ -54,19 +54,19 @@ interface AnswerPayloadInterface {
 type CallType = "pending" | "user-busy" |  "calling" | "incoming" | "talking" | "end"
 
 
-const config = {
-  iceServers: [
-    {
-      urls: [
-        "stun:stun.l.google.com:19302",
-        "stun:stun1.l.google.com:19302",
-        "stun:stun2.l.google.com:19302",
-        "stun:stun3.l.google.com:19302",
-        "stun:stun4.l.google.com:19302",
-      ],
-    },
-  ],
-};
+// const config = {
+//   iceServers: [
+//     {
+//       urls: [
+//         "stun:stun.l.google.com:19302",
+//         "stun:stun1.l.google.com:19302",
+//         "stun:stun2.l.google.com:19302",
+//         "stun:stun3.l.google.com:19302",
+//         "stun:stun4.l.google.com:19302",
+//       ],
+//     },
+//   ],
+// };
 
 const VideoCall = () => {
   const [openModal, setOpenModal] = useState(false)
@@ -109,6 +109,35 @@ const VideoCall = () => {
   const [offerPayload, setOfferPayload] = useState<OfferPayloadInterface | null>(null)
 
   const [isRemoteUserBussy, setIsRemoteUserBusy] = useState<boolean>(false)
+
+
+    const [iceServers, setIceServers] = useState<RTCIceServer[]>([]);
+
+
+  useEffect(() => {
+    const fetchIce = async () => {
+      try {
+        const {data} = await api.get('/twilio')
+        setIceServers(data);
+      } catch (error) {
+        clientCatchError(error)
+        setIceServers([
+          {
+            urls: [
+              "stun:stun.l.google.com:19302",
+              "stun:stun1.l.google.com:19302",
+            ],
+          },
+        ]);
+      }
+    };
+
+    fetchIce();
+  }, []);
+
+  const config = {
+    iceServers
+  };
 
 
   const toggleScreen = async () => {
@@ -515,16 +544,18 @@ const VideoCall = () => {
 
 
   useEffect(() => {
-    if (!chatId) return;
     socket.connect();
     socket.emit("join-room", chatId);
-    toggleVideo()
+
+    const id = setTimeout(() => {
+      toggleVideo();
+    }, 0);
 
     return () => {
+      clearTimeout(id);
       socket.emit("leave-room", chatId);
-      socket.disconnect();
     };
-  }, [chatId]);
+  }, []);
 
   useEffect(() => {
     const handleBeforeUnload = () => {
