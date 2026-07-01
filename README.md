@@ -12,11 +12,11 @@ Developed by **Satyam Sharma**
 
 Frontend
 
-https://your-frontend-domain.com
+[https://your-frontend-domain.com](https://circle-ui-pink.vercel.app/)
 
 Backend API
 
-https://your-backend-domain.com
+[https://your-backend-domain.com](https://circle-backend-jvaw.onrender.com/)
 
 ---
 
