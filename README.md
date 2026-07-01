@@ -64,7 +64,6 @@ https://your-cicd-demo-video-link
 
 ### Friend System
 
-- Search Users
 - Add Friends
 - Chat with Friends
 
@@ -106,7 +105,7 @@ https://your-cicd-demo-video-link
 - React
 - TypeScript
 - Tailwind CSS
-- Redux Toolkit
+- Zustand
 - React Router
 - Axios
 
